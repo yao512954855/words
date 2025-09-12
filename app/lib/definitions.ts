@@ -86,3 +86,39 @@ export type InvoiceForm = {
   amount: number;
   status: 'pending' | 'paid';
 };
+
+// app/lib/definitions.ts 新增
+export type Word = {
+  id: string;
+  word: string;
+  phonetic: string | null;
+  definition: string;
+  example: string | null;
+  category: string | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserWord = {
+  id: string;
+  user_id: string;
+  word_id: string;
+  status: 'new' | 'learning' | 'mastered';
+  review_count: number;
+  last_reviewed: string | null;
+  next_review: string | null;
+  created_at: string;
+  updated_at: string;
+  // 联合单词详情（查询时关联）
+  word?: Word;
+};
+
+export type FilteredWordsTableType = {
+  id: string;
+  word: string;
+  definition: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: string;
+  total_count?: number; // 可选，用于分页
+};
