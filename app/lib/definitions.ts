@@ -122,3 +122,10 @@ export type FilteredWordsTableType = {
   category: string;
   total_count?: number; // 可选，用于分页
 };
+
+export type CustomerForm = {
+  id: string;
+  customer_id: string;
+  amount: number;
+  status: 'pending' | 'paid';
+};
