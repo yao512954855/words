@@ -2,7 +2,9 @@ import Image from 'next/image';
 import { UpdateCustomer, DeleteCustomer,WriteCustomer } from '@/app/ui/customers/buttons';
 import CustomerStatus from '@/app/ui/customers/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
-import { fetchFilteredCustomers } from '@/app/lib/data';
+import { fetchFilteredCustomers } from '@/app/lib/customers';
+import LetterBoxInput from '@/app/ui/customers/letter-box-input';
+
 
 export default async function CustomersTable({
   query,
@@ -12,6 +14,7 @@ export default async function CustomersTable({
   currentPage: number;
 }) {
   const customers = await fetchFilteredCustomers(query, currentPage);
+
 
   return (
     <div className="mt-6 flow-root">
@@ -29,17 +32,27 @@ export default async function CustomersTable({
                       <Image
                         src={customer.image_url}
                         className="mr-2 rounded-md"
-                        width={128}
-                        height={128}
+                        width={256}
+                        height={256}
                         alt={`${customer.name}'s profile picture`}
                       />
-                      {/* <p>{customer.name}</p> */}
+
                     </div>
                     {/* <p className="text-sm text-gray-500">{customer.email}</p> */}
                   </div>
                   {/* <CustomerStatus status={customer.status} /> */}
+                  
                 </div>
-                <div className="flex w-full items-center justify-between pt-4">
+                <div className="flex flex-col w-full items-center justify-between pt-4">
+                  
+                    <div className="flex items-center gap-3 width:256px height:256px text-gray-300 m-3">
+                      <p>提示：字母长度{customer.name.length}</p>
+                    </div>
+                    <div className="flex items-center gap-3 width:256px height:256px">
+                      
+                      <LetterBoxInput id={customer.id} word={customer.name} placeholder="请输入单词" />
+                    </div>
+                 
                   {/* <div>
                     <p className="text-xl font-medium">
                       {formatCurrency(customer.amount)}
@@ -47,8 +60,8 @@ export default async function CustomersTable({
                     <p>{formatDateToLocal(customer.date)}</p>
                   </div> */}
                   <div className="flex justify-end gap-2">
-                    <UpdateCustomer id={customer.id} />
-                    <DeleteCustomer id={customer.id} />
+                    {/* <UpdateCustomer id={customer.id} />
+                    <DeleteCustomer id={customer.id} /> */}
                     {/* <WriteCustomer id={customer.id} /> */}
                   </div>
                 </div>
@@ -73,29 +86,45 @@ export default async function CustomersTable({
                 <th scope="col" className="px-3 py-5 font-medium">
                   Status
                 </th> */}
-                <th scope="col" className="relative py-3 pl-6 pr-3">
+                {/* <th scope="col" className="relative py-3 pl-6 pr-3">
                   <span className="sr-only">Edit</span>
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="bg-white">
               {customers?.map((customer) => (
                 <tr
                   key={customer.id}
-                  className="w-full border-b py-3 text-sm last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
+                  className="w-full border-b py-3 text-lg last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
                 >
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex items-center gap-3">
                       <Image
                         src={customer.image_url}
                         className="rounded-md"
-                        width={128}
-                        height={128}
+                        width={256}
+                        height={256}
                         alt={`${customer.name}'s profile picture`}
                       />
                       {/* <p>{customer.name}</p> */}
                     </div>
                   </td>
+
+                  <td className="whitespace-nowrap py-3 pl-6 pr-3">
+                    <div className="flex items-center gap-3 width:256px height:256px text-gray-500 m-3">
+                      <p>提示：字母长度{customer.name.length}</p>
+                    </div>
+                    <div className="flex items-center gap-3 width:256px height:256px">
+                      
+                      <LetterBoxInput id={customer.id} word={customer.name} placeholder="请输入单词" />
+                    </div>
+                  </td>
+                  {/* <td className="whitespace-nowrap py-3 pl-6 pr-3">
+                    <div className="flex items-center gap-3 width:256px height:256px">
+                      <p>{customer.name}</p>
+                    </div>
+                  </td> */}
+
                   {/* <td className="whitespace-nowrap px-3 py-3">
                     {customer.email}
                   </td> */}
@@ -108,12 +137,12 @@ export default async function CustomersTable({
                   {/* <td className="whitespace-nowrap px-3 py-3">
                     <CustomerStatus status={customer.status} />
                   </td> */}
-                  <td className="whitespace-nowrap py-3 pl-6 pr-3">
+                  {/* <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
                       <UpdateCustomer id={customer.id} />
                       <DeleteCustomer id={customer.id} />
                     </div>
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </tbody>

@@ -1,0 +1,50 @@
+'use client';
+
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useDebouncedCallback } from 'use-debounce';
+import { updateCustomer } from '@/app/lib/customers';
+
+export default function Search({ placeholder,word,id }: { placeholder: string,word:string,id:string }) {
+
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  const handleSearch = useDebouncedCallback((term) => {
+    console.log(`Searching... ${term}`);
+
+    if (term==word) {
+      console.log('匹配成功');
+      console.log(`id: ${id}`);
+      updateCustomer(id,'1')
+      // const params = new URLSearchParams(searchParams);
+      // params.set('page', '1');
+      // if (term) {
+      //   params.set('query', term);
+      // } else {
+      //   params.delete('query');
+      // }
+      // console.log(`param ${params}`)
+      // replace(`${pathname}?${params.toString()}`);
+      
+    }
+  }, 100);
+
+  return (
+    <div className="relative flex flex-1 flex-shrink-0">
+      <label htmlFor="search" className="sr-only">
+        Search
+      </label>
+      <input
+        className="peer block w-full rounded-md border border-blue-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500"
+        placeholder={placeholder}
+        onChange={(e) => {
+          handleSearch(e.target.value);
+        }}
+        defaultValue={searchParams.get('query')?.toString()}
+      />
+      {/* <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" /> */}
+    </div>
+  );
+}

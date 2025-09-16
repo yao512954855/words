@@ -14,6 +14,7 @@ export type Customer = {
   name: string;
   email: string;
   image_url: string;
+  ok: string; // '0' for not matched, '1' for matched
 };
 
 export type Invoice = {

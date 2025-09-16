@@ -266,7 +266,7 @@ export async function fetchCustomerById(id: string) {
   }
 }
 
-const ITEMS_PER_PAGE2 = 6;
+const ITEMS_PER_PAGE2 = 10;
 export async function fetchFilteredCustomers(
   query: string,
   currentPage: number,
@@ -292,7 +292,7 @@ export async function fetchFilteredCustomers(
         invoices.date::text ILIKE ${`%${query}%`} OR
         invoices.status ILIKE ${`%${query}%`}
       ORDER BY invoices.date DESC
-      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+      LIMIT ${ITEMS_PER_PAGE2} OFFSET ${offset}
     `;
 
     return invoices;
@@ -301,3 +301,6 @@ export async function fetchFilteredCustomers(
     throw new Error('Failed to fetch invoices.');
   }
 }
+
+
+
