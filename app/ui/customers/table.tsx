@@ -4,6 +4,7 @@ import CustomerStatus from '@/app/ui/customers/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
 import { fetchFilteredCustomers } from '@/app/lib/customers';
 import LetterBoxInput from '@/app/ui/customers/letter-box-input';
+import WordHint from '@/app/ui/customers/word-hint';
 
 
 export default async function CustomersTable({
@@ -45,8 +46,9 @@ export default async function CustomersTable({
                 </div>
                 <div className="flex flex-col w-full items-center justify-between pt-4">
                   
-                    <div className="flex items-center gap-3 width:256px height:256px text-gray-300 m-3">
+                    <div className="flex flex-col items-center gap-1 width:256px height:256px text-gray-300 m-3">
                       <p>提示：字母长度{customer.name.length}</p>
+                      <WordHint word={customer.name} />
                     </div>
                     <div className="flex items-center gap-3 width:256px height:256px">
                       
@@ -111,8 +113,9 @@ export default async function CustomersTable({
                   </td>
 
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
-                    <div className="flex items-center gap-3 width:256px height:256px text-gray-500 m-3">
+                    <div className="flex flex-col items-start gap-1 width:256px height:256px text-gray-500 m-3">
                       <p>提示：字母长度{customer.name.length}</p>
+                      <WordHint word={customer.name} />
                     </div>
                     <div className="flex items-center gap-3 width:256px height:256px">
                       
