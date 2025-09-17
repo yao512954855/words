@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { UpdateCustomer, DeleteCustomer,WriteCustomer } from '@/app/ui/customers/buttons';
 import CustomerStatus from '@/app/ui/customers/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
-import { fetchFilteredCustomers } from '@/app/lib/customers';
+import { fetchFilteredCustomers } from '@/app/lib/data';
 import LetterBoxInput from '@/app/ui/customers/letter-box-input';
 import WordHint from '@/app/ui/customers/word-hint';
 
@@ -10,11 +10,19 @@ import WordHint from '@/app/ui/customers/word-hint';
 export default async function CustomersTable({
   query,
   currentPage,
+  filters,
 }: {
   query: string;
   currentPage: number;
+  filters?: {
+    version?: string;
+    grade?: string;
+    theclass?: string;
+    theunit?: string;
+    ok?: string;
+  };
 }) {
-  const customers = await fetchFilteredCustomers(query, currentPage);
+  const customers = await fetchFilteredCustomers(query, currentPage, filters);
 
 
   return (

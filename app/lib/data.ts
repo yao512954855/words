@@ -219,16 +219,51 @@ export async function fetchCustomers() {
 // }
 
 
-export async function fetchCustomersPages(query: string) {
+export async function fetchCustomersPages(
+  query: string,
+  filters?: {
+    version?: string;
+    grade?: string;
+    theclass?: string;
+    theunit?: string;
+    ok?: string;
+  }
+) {
   try {
-    const data = await sql`SELECT COUNT(*)
-    FROM customers
-    WHERE
-      customers.name ILIKE ${`%${query}%`} OR
-      customers.email ILIKE ${`%${query}%`}
-  `;
+    // 构建WHERE条件
+    const conditions = [];
+    const params = [];
 
-    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
+    if (query) {
+      conditions.push(`(customers.name ILIKE $${params.length + 1} OR customers.email ILIKE $${params.length + 2})`);
+      params.push(`%${query}%`, `%${query}%`);
+    }
+
+    if (filters?.version) {
+      conditions.push(`customers.version = $${params.length + 1}`);
+      params.push(filters.version);
+    }
+    if (filters?.grade) {
+      conditions.push(`customers.grade = $${params.length + 1}`);
+      params.push(filters.grade);
+    }
+    if (filters?.theclass) {
+      conditions.push(`customers.theclass = $${params.length + 1}`);
+      params.push(filters.theclass);
+    }
+    if (filters?.theunit) {
+      conditions.push(`customers.theunit = $${params.length + 1}`);
+      params.push(filters.theunit);
+    }
+    if (filters?.ok) {
+      conditions.push(`customers.ok = $${params.length + 1}`);
+      params.push(filters.ok);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    const data = await sql.unsafe(`SELECT COUNT(*) FROM customers ${whereClause}`, params);
+    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE2);
     return totalPages;
   } catch (error) {
     console.error('Database Error:', error);
@@ -262,39 +297,123 @@ export async function fetchCustomerById(id: string) {
   }
 }
 
-const ITEMS_PER_PAGE2 = 10;
+const ITEMS_PER_PAGE2 = 6;
 export async function fetchFilteredCustomers(
   query: string,
   currentPage: number,
+  filters?: {
+    version?: string;
+    grade?: string;
+    theclass?: string;
+    theunit?: string;
+    ok?: string;
+  }
 ) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE2;
 
   try {
-    const invoices = await sql<InvoicesTable[]>`
+    // 构建WHERE条件
+    const conditions = [];
+    const params = [];
+
+    if (query) {
+      conditions.push(`(customers.name ILIKE $${params.length + 1} OR customers.email ILIKE $${params.length + 2})`);
+      params.push(`%${query}%`, `%${query}%`);
+    }
+
+    if (filters?.version) {
+      conditions.push(`customers.version = $${params.length + 1}`);
+      params.push(filters.version);
+    }
+    if (filters?.grade) {
+      conditions.push(`customers.grade = $${params.length + 1}`);
+      params.push(filters.grade);
+    }
+    if (filters?.theclass) {
+      conditions.push(`customers.theclass = $${params.length + 1}`);
+      params.push(filters.theclass);
+    }
+    if (filters?.theunit) {
+      conditions.push(`customers.theunit = $${params.length + 1}`);
+      params.push(filters.theunit);
+    }
+    if (filters?.ok) {
+      conditions.push(`customers.ok = $${params.length + 1}`);
+      params.push(filters.ok);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    // 添加LIMIT和OFFSET参数
+    const limitIndex = params.length + 1;
+    const offsetIndex = params.length + 2;
+    params.push(ITEMS_PER_PAGE2, offset);
+    
+    const customers = await sql.unsafe(`
       SELECT
-        invoices.id,
-        invoices.amount,
-        invoices.date,
-        invoices.status,
+        customers.id,
         customers.name,
         customers.email,
-        customers.image_url
-      FROM invoices
-      JOIN customers ON invoices.customer_id = customers.id
-      WHERE
-        customers.name ILIKE ${`%${query}%`} OR
-        customers.email ILIKE ${`%${query}%`} OR
-        invoices.amount::text ILIKE ${`%${query}%`} OR
-        invoices.date::text ILIKE ${`%${query}%`} OR
-        invoices.status ILIKE ${`%${query}%`}
-      ORDER BY invoices.date DESC
-      LIMIT ${ITEMS_PER_PAGE2} OFFSET ${offset}
-    `;
+        customers.image_url,
+        customers.ok,
+        customers.version,
+        customers.grade,
+        customers.theclass,
+        customers.theunit,
+        customers.studytimes,
+        customers.orderid
+      FROM customers
+      ${whereClause}
+      ORDER BY customers.orderid ASC
+      LIMIT $${limitIndex} OFFSET $${offsetIndex}
+    `, params);
 
-    return invoices;
+    return customers;
   } catch (error) {
     console.error('Database Error:', error);
-    throw new Error('Failed to fetch invoices.');
+    throw new Error('Failed to fetch filtered customers.');
+  }
+}
+
+// 获取筛选选项的函数
+export async function fetchChoiceOptions(type: string) {
+  try {
+    const options = await sql`
+      SELECT id, type, value, label, sort_order, is_active
+      FROM choicetable
+      WHERE type = ${type} AND is_active = true
+      ORDER BY sort_order ASC, label ASC
+    `;
+    return options;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error(`Failed to fetch ${type} options.`);
+  }
+}
+
+// 获取所有筛选选项
+export async function fetchAllChoiceOptions() {
+  try {
+    const options = await sql`
+      SELECT id, type, value, label, sort_order, is_active
+      FROM choicetable
+      WHERE is_active = true
+      ORDER BY type ASC, sort_order ASC, label ASC
+    `;
+    
+    // 按类型分组
+    const groupedOptions = options.reduce((acc, option) => {
+      if (!acc[option.type]) {
+        acc[option.type] = [];
+      }
+      acc[option.type].push(option);
+      return acc;
+    }, {});
+    
+    return groupedOptions;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch choice options.');
   }
 }
 

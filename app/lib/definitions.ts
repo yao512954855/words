@@ -15,6 +15,12 @@ export type Customer = {
   email: string;
   image_url: string;
   ok: string; // '0' for not matched, '1' for matched
+  version: string; // 版本如人教版rj
+  grade: string; // 年级如四年级4
+  theclass: string; // 上下学期如2
+  theunit: string; // 课程单元如5
+  studytimes: string; // 系统当前时间
+  sorderid: string; // 单词的排序，如3
 };
 
 export type Invoice = {
@@ -129,4 +135,15 @@ export type CustomerForm = {
   customer_id: string;
   amount: number;
   status: 'pending' | 'paid';
+};
+
+export type ChoiceOption = {
+  id: string;
+  type: string;
+  value: string;
+  label: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };

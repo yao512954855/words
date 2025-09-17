@@ -3,24 +3,42 @@ import { lusitana } from '@/app/ui/fonts';
 import Pagination from '@/app/ui/customers/pagination';
 import Search from '@/app/ui/search';
 import Table from '@/app/ui/customers/table';
-import { fetchCustomersPages } from '@/app/lib/data';
+import { fetchCustomersPages, fetchAllChoiceOptions } from '@/app/lib/data';
 import { CreateCustomers } from '@/app/ui/customers/buttons';
 import { Suspense } from 'react';
 import { CustomersTableSkeleton } from '@/app/ui/skeletons';
+import CustomersFilters from '@/app/ui/customers/filters';
 
 
 export default async function CustomersPage(props: {
   searchParams?: Promise<{
     query?: string;
     page?: string;
+    version?: string;
+    grade?: string;
+    theclass?: string;
+    theunit?: string;
+    ok?: string;
   }>;
 }) {
 
   const searchParams = await props.searchParams;
   const query = searchParams?.query || '';
   const currentPage = Number(searchParams?.page) || 1;
+  
+  // 获取筛选参数
+  const filters = {
+    version: searchParams?.version,
+    grade: searchParams?.grade,
+    theclass: searchParams?.theclass,
+    theunit: searchParams?.theunit,
+    ok: searchParams?.ok,
+  };
 
-  const totalPages = await fetchCustomersPages(query);
+  const totalPages = await fetchCustomersPages(query, filters);
+  
+  // 获取筛选选项
+  const choiceOptions = await fetchAllChoiceOptions();
 
   return (
     <div className="w-full">
@@ -31,8 +49,12 @@ export default async function CustomersPage(props: {
         {/* <Search placeholder="Search Customers..." /> */}
         {/* <CreateCustomers /> */}
       </div>
-       <Suspense key={query + currentPage} fallback={<CustomersTableSkeleton />}>
-        <Table query={query} currentPage={currentPage} />
+      
+      {/* 筛选组件 */}
+      <CustomersFilters choiceOptions={choiceOptions} />
+      
+       <Suspense key={query + currentPage + JSON.stringify(filters)} fallback={<CustomersTableSkeleton />}>
+        <Table query={query} currentPage={currentPage} filters={filters} />
       </Suspense>
       <div className="mt-5 flex w-full justify-center">
         <Pagination totalPages={totalPages} />
