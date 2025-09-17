@@ -20,7 +20,10 @@ export default function Search({ placeholder,word,id }: { placeholder: string,wo
     if (term==word) {
       console.log('匹配成功');
       console.log(`id: ${id}`);
-      updateCustomer(id,'1');
+      
+      // 获取当前URL参数并传递给updateCustomer
+      const currentSearchParams = searchParams.toString();
+      updateCustomer(id,'1', currentSearchParams);
       setIsCorrect(true);
       setShowSuccess(true);
       

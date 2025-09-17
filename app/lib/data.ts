@@ -1,4 +1,6 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import postgres from 'postgres';
+import { auth } from '@/auth';
 import {
   CustomerField,
   CustomersTableType,
@@ -230,9 +232,13 @@ export async function fetchCustomersPages(
   }
 ) {
   try {
+    // 获取当前用户信息
+    const session = await auth();
+    const userId = session?.user?.email || 'anonymous';
+
     // 构建WHERE条件
     const conditions = [];
-    const params = [];
+    const params = [userId]; // 第一个参数是用户ID
 
     if (query) {
       conditions.push(`(customers.name ILIKE $${params.length + 1} OR customers.email ILIKE $${params.length + 2})`);
@@ -255,14 +261,29 @@ export async function fetchCustomersPages(
       conditions.push(`customers.theunit = $${params.length + 1}`);
       params.push(filters.theunit);
     }
+    
+    // 处理掌握状态筛选
     if (filters?.ok) {
-      conditions.push(`customers.ok = $${params.length + 1}`);
-      params.push(filters.ok);
+      if (filters.ok === '0') {
+        // 未掌握：没有记录或is_learned为false
+        conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
+      } else if (filters.ok === '1') {
+        // 已掌握：is_learned为true
+        conditions.push(`uwp.is_learned = true`);
+      }
+    } else {
+      // 如果没有筛选条件，默认只显示未掌握的单词
+      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
-    const data = await sql.unsafe(`SELECT COUNT(*) FROM customers ${whereClause}`, params);
+    const data = await sql.unsafe(`
+      SELECT COUNT(*) 
+      FROM customers 
+      LEFT JOIN user_word_progress uwp ON customers.id = uwp.word_id AND uwp.user_id = $1
+      ${whereClause}
+    `, params);
     const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE2);
     return totalPages;
   } catch (error) {
@@ -312,9 +333,13 @@ export async function fetchFilteredCustomers(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE2;
 
   try {
+    // 获取当前用户信息
+    const session = await auth();
+    const userId = session?.user?.email || 'anonymous';
+
     // 构建WHERE条件
     const conditions = [];
-    const params = [];
+    const params = [userId]; // 第一个参数是用户ID
 
     if (query) {
       conditions.push(`(customers.name ILIKE $${params.length + 1} OR customers.email ILIKE $${params.length + 2})`);
@@ -337,17 +362,25 @@ export async function fetchFilteredCustomers(
       conditions.push(`customers.theunit = $${params.length + 1}`);
       params.push(filters.theunit);
     }
+    
+    // 处理掌握状态筛选
     if (filters?.ok) {
-      conditions.push(`customers.ok = $${params.length + 1}`);
-      params.push(filters.ok);
+      if (filters.ok === '0') {
+        // 未掌握：没有记录或is_learned为false
+        conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
+      } else if (filters.ok === '1') {
+        // 已掌握：is_learned为true
+        conditions.push(`uwp.is_learned = true`);
+      }
+    } else {
+      // 如果没有筛选条件，默认只显示未掌握的单词
+      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
     // 添加LIMIT和OFFSET参数
-    const limitIndex = params.length + 1;
-    const offsetIndex = params.length + 2;
-    params.push(ITEMS_PER_PAGE2, offset);
+    params.push(String(ITEMS_PER_PAGE2), String(offset));
     
     const customers = await sql.unsafe(`
       SELECT
@@ -355,7 +388,10 @@ export async function fetchFilteredCustomers(
         customers.name,
         customers.email,
         customers.image_url,
-        customers.ok,
+        CASE 
+          WHEN uwp.is_learned = true THEN '1'
+          ELSE '0'
+        END as ok,
         customers.version,
         customers.grade,
         customers.theclass,
@@ -363,9 +399,10 @@ export async function fetchFilteredCustomers(
         customers.studytimes,
         customers.orderid
       FROM customers
+      LEFT JOIN user_word_progress uwp ON customers.id = uwp.word_id AND uwp.user_id = $1
       ${whereClause}
       ORDER BY customers.orderid ASC
-      LIMIT $${limitIndex} OFFSET $${offsetIndex}
+      LIMIT $${params.length - 1} OFFSET $${params.length}
     `, params);
 
     return customers;

@@ -3,6 +3,8 @@
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { ChoiceOption } from '@/app/lib/definitions';
+import { getUserFilterState, saveUserFilterState } from '@/app/lib/filter-state';
+import { useState, useEffect } from 'react';
 
 interface CustomersFiltersProps {
   choiceOptions: {
@@ -14,8 +16,72 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleFilterChange = useDebouncedCallback((filterType: string, value: string) => {
+  // 从URL参数获取当前筛选状态
+  const currentVersion = searchParams.get('version') || 'all';
+  const currentGrade = searchParams.get('grade') || 'all';
+  const currentClass = searchParams.get('theclass') || 'all';
+  const currentUnit = searchParams.get('theunit') || 'all';
+  const currentOk = searchParams.get('ok') || 'all';
+
+  // 加载用户保存的筛选状态
+  useEffect(() => {
+    const loadFilterState = async () => {
+      try {
+        const savedState = await getUserFilterState();
+        
+        // 如果有保存的状态且当前URL没有筛选参数，则应用保存的状态
+        const hasUrlFilters = searchParams.get('version') || searchParams.get('grade') || 
+                             searchParams.get('theclass') || searchParams.get('theunit') || 
+                             searchParams.get('ok');
+        
+        if (!hasUrlFilters && Object.keys(savedState).length > 0) {
+          const params = new URLSearchParams(searchParams);
+          
+          // 应用保存的筛选状态到URL
+          Object.entries(savedState).forEach(([filterType, values]) => {
+            if (Array.isArray(values) && values.length > 0) {
+              params.set(filterType, values[0]); // 取第一个值
+            }
+          });
+          
+          replace(`${pathname}?${params.toString()}`);
+        }
+      } catch (error) {
+        console.error('Failed to load filter state:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFilterState();
+  }, []);
+
+  // 保存筛选状态到数据库
+  const saveFilterState = async (updatedParams: URLSearchParams) => {
+    const filterState: Record<string, string[]> = {};
+    
+    const version = updatedParams.get('version');
+    const grade = updatedParams.get('grade');
+    const theclass = updatedParams.get('theclass');
+    const theunit = updatedParams.get('theunit');
+    const ok = updatedParams.get('ok');
+    
+    if (version && version !== 'all') filterState.version = [version];
+    if (grade && grade !== 'all') filterState.grade = [grade];
+    if (theclass && theclass !== 'all') filterState.theclass = [theclass];
+    if (theunit && theunit !== 'all') filterState.theunit = [theunit];
+    if (ok && ok !== 'all') filterState.ok = [ok];
+    
+    try {
+      await saveUserFilterState(filterState);
+    } catch (error) {
+      console.error('Failed to save filter state:', error);
+    }
+  };
+
+  const handleFilterChange = useDebouncedCallback(async (filterType: string, value: string) => {
     const params = new URLSearchParams(searchParams);
     
     if (value && value !== 'all') {
@@ -28,13 +94,10 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
     params.delete('page');
     
     replace(`${pathname}?${params.toString()}`);
+    
+    // 立即保存新的筛选状态
+    await saveFilterState(params);
   }, 300);
-
-  const currentVersion = searchParams.get('version') || 'all';
-  const currentGrade = searchParams.get('grade') || 'all';
-  const currentClass = searchParams.get('theclass') || 'all';
-  const currentUnit = searchParams.get('theunit') || 'all';
-  const currentOk = searchParams.get('ok') || 'all';
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -145,9 +208,16 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
       {/* 清除所有筛选 */}
       <div className="mt-4 flex justify-end">
         <button
-          onClick={() => {
+          onClick={async () => {
             const params = new URLSearchParams();
             replace(`${pathname}?${params.toString()}`);
+            
+            // 清除数据库中保存的筛选状态
+            try {
+              await saveUserFilterState({});
+            } catch (error) {
+              console.error('Failed to clear filter state:', error);
+            }
           }}
           className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors"
         >
