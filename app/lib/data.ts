@@ -271,9 +271,7 @@ export async function fetchCustomersPages(
         // 已掌握：is_learned为true
         conditions.push(`uwp.is_learned = true`);
       }
-    } else {
-      // 如果没有筛选条件，默认只显示未掌握的单词
-      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
+      // 如果filters.ok存在但不是'0'或'1'，则显示全部（不添加任何条件）
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -372,9 +370,7 @@ export async function fetchFilteredCustomers(
         // 已掌握：is_learned为true
         conditions.push(`uwp.is_learned = true`);
       }
-    } else {
-      // 如果没有筛选条件，默认只显示未掌握的单词
-      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
+      // 如果filters.ok存在但不是'0'或'1'，则显示全部（不添加任何条件）
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
