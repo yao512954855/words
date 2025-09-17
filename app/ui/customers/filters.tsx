@@ -5,6 +5,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { ChoiceOption } from '@/app/lib/definitions';
 import { getUserFilterState, saveUserFilterState } from '@/app/lib/filter-state';
 import { useState, useEffect } from 'react';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
 interface CustomersFiltersProps {
   choiceOptions: {
@@ -17,6 +18,7 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   const pathname = usePathname();
   const { replace } = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(true); // 手机端折叠状态
 
   // 从URL参数获取当前筛选状态
   const currentVersion = searchParams.get('version') || 'all';
@@ -100,10 +102,28 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   }, 300);
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">筛选条件</h3>
+    <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-200 mb-4 md:mb-6">
+      {/* 标题和折叠按钮 */}
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <h3 className="text-base md:text-lg font-semibold text-gray-900">筛选条件</h3>
+        {/* 手机端折叠按钮 */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="md:hidden flex items-center text-gray-600 hover:text-gray-900 transition-colors px-2 py-1 rounded-md hover:bg-gray-50"
+        >
+          <span className="text-xs mr-1">
+            {isCollapsed ? '展开' : '收起'}
+          </span>
+          {isCollapsed ? (
+            <ChevronDownIcon className="h-3 w-3" />
+          ) : (
+            <ChevronUpIcon className="h-3 w-3" />
+          )}
+        </button>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* PC端：始终显示所有筛选条件 */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* 版本筛选 */}
         <div>
           <label htmlFor="version" className="block text-sm font-medium text-gray-700 mb-2">
@@ -202,6 +222,122 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* 手机端：可折叠的筛选条件 */}
+      <div className="md:hidden">
+        {/* 始终显示的筛选条件：单元和掌握状态 */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* 单元筛选 */}
+          <div>
+            <label htmlFor="theunit-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+              单元
+            </label>
+            <select
+              id="theunit-mobile"
+              value={currentUnit}
+              onChange={(e) => handleFilterChange('theunit', e.target.value)}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">全部单元</option>
+              {choiceOptions.theunit?.map((option) => (
+                <option key={option.id} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 掌握状态筛选 */}
+          <div>
+            <label htmlFor="ok-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+              掌握状态
+            </label>
+            <select
+              id="ok-mobile"
+              value={currentOk}
+              onChange={(e) => handleFilterChange('ok', e.target.value)}
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">全部状态</option>
+              {choiceOptions.ok?.map((option) => (
+                <option key={option.id} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* 可折叠的筛选条件：版本、年级、学期 */}
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-96 opacity-100'
+        }`}>
+          <div className="grid grid-cols-1 gap-3 pt-3 border-t border-gray-200">
+            {/* 版本筛选 */}
+            <div>
+              <label htmlFor="version-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+                版本
+              </label>
+              <select
+                id="version-mobile"
+                value={currentVersion}
+                onChange={(e) => handleFilterChange('version', e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">全部版本</option>
+                {choiceOptions.version?.map((option) => (
+                  <option key={option.id} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 年级和学期并排显示 */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* 年级筛选 */}
+              <div>
+                <label htmlFor="grade-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+                  年级
+                </label>
+                <select
+                  id="grade-mobile"
+                  value={currentGrade}
+                  onChange={(e) => handleFilterChange('grade', e.target.value)}
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">全部年级</option>
+                  {choiceOptions.grade?.map((option) => (
+                    <option key={option.id} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 学期筛选 */}
+              <div>
+                <label htmlFor="theclass-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+                  学期
+                </label>
+                <select
+                  id="theclass-mobile"
+                  value={currentClass}
+                  onChange={(e) => handleFilterChange('theclass', e.target.value)}
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">全部学期</option>
+                  {choiceOptions.theclass?.map((option) => (
+                    <option key={option.id} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
