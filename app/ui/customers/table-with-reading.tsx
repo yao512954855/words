@@ -242,7 +242,7 @@ export default function TableWithReading({
               className={`flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium ${
                 clientCurrentPage <= 1
                   ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                  : 'border-blue-300 bg-white text-blue-500 hover:bg-blue-50'
               }`}
             >
               ←
@@ -256,7 +256,7 @@ export default function TableWithReading({
                 className={`flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium ${
                   page === clientCurrentPage
                     ? 'border-blue-500 bg-blue-600 text-white'
-                    : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                    : 'border-blue-300 bg-white text-blue-500 hover:bg-blue-50'
                 }`}
               >
                 {page}
@@ -270,7 +270,7 @@ export default function TableWithReading({
               className={`flex h-10 w-10 items-center justify-center rounded-md border text-sm font-medium ${
                 clientCurrentPage >= totalPages
                   ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                  : 'border-blue-300 bg-white text-blue-500 hover:bg-blue-50'
               }`}
             >
               →
