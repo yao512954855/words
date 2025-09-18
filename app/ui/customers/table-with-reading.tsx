@@ -131,40 +131,46 @@ export default function TableWithReading({
 
   return (
     <div className="mt-6 flow-root">
-      {/* 连续朗读控制组件标题和折叠按钮 */}
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold text-gray-900">连续朗读</h2>
-        {isMobile && (
-          <button 
-            onClick={toggleReadingCollapse}
-            className="p-2 rounded-md text-blue-500 hover:bg-blue-50"
-          >
-            {isReadingCollapsed ? (
+      {/* 连续朗读控制组件 - 包含在方形框内 */}
+      <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-200 mb-4 md:mb-6">
+        {/* 连续朗读控制组件标题和折叠按钮 */}
+        <div className="flex justify-between items-center mb-3 md:mb-4">
+          <h3 className="text-base md:text-lg font-semibold text-gray-900">连续朗读</h3>
+          {isMobile && (
+            <button 
+              onClick={toggleReadingCollapse}
+              className="md:hidden flex items-center text-blue-500 hover:text-blue-600 transition-colors px-2 py-1 rounded-md hover:bg-blue-50"
+            >
               <div className="flex items-center">
-                <span className="text-sm mr-1">展开</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className="text-sm mr-1">
+                  {isReadingCollapsed ? '展开' : '收起'}
+                </span>
+                {isReadingCollapsed ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center">
-                <span className="text-sm mr-1">收起</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              </div>
-            )}
-          </button>
-        )}
+            </button>
+          )}
+        </div>
+        
+        {/* 连续朗读控制组件 - 根据折叠状态显示 */}
+        <div className="md:block">
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            isMobile && isReadingCollapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'
+          }`}>
+            <ContinuousReading 
+              words={allCustomers}
+              onWordChange={handleWordChange}
+            />
+          </div>
+        </div>
       </div>
-      
-      {/* 连续朗读控制组件 - 根据折叠状态显示 */}
-      {(!isMobile || !isReadingCollapsed) && (
-        <ContinuousReading 
-          words={allCustomers}
-          onWordChange={handleWordChange}
-        />
-      )}
       
       {isLoadingAll && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
