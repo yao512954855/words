@@ -250,6 +250,58 @@ async function calculateTermWords(filterState: Record<string, string[]>): Promis
   }
 }
 
+// 计算当前学期已掌握的单词数量
+async function calculateTermMasteredWords(filterState: Record<string, string[]>): Promise<number> {
+  try {
+    // 获取当前用户信息
+    const session = await auth();
+    const userId = session?.user?.email || 'anonymous';
+
+    // 获取当前选择的版本、年级、学期
+    const selectedVersion = filterState.version?.[0];
+    const selectedGrade = filterState.grade?.[0];
+    const selectedClass = filterState.theclass?.[0];
+
+    if (!selectedVersion || !selectedGrade || !selectedClass) {
+      // 如果没有选择筛选条件，返回0
+      return 0;
+    }
+
+    // 构建查询条件 - 只统计当前选择的学期中已掌握的单词
+    const conditions = [];
+    const params = [userId]; // 第一个参数是用户ID
+
+    // 必须是已掌握的单词
+    conditions.push(`uwp.is_learned = true`);
+
+    // 版本必须匹配
+    conditions.push(`customers.version = $${params.length + 1}`);
+    params.push(selectedVersion);
+
+    // 年级必须匹配
+    conditions.push(`customers.grade = $${params.length + 1}`);
+    params.push(selectedGrade);
+
+    // 学期必须匹配
+    conditions.push(`customers.theclass = $${params.length + 1}`);
+    params.push(selectedClass);
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    const result = await sql.unsafe(`
+      SELECT COUNT(*) 
+      FROM customers 
+      INNER JOIN user_word_progress uwp ON customers.id = uwp.word_id AND uwp.user_id = $1
+      ${whereClause}
+    `, params);
+
+    return Number(result[0].count ?? '0');
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
 export async function fetchCardData() {
   try {
     // 获取用户筛选状态
@@ -261,27 +313,24 @@ export async function fetchCardData() {
     const totalwordsmasteredPromise = calculateMasteredWords(filterState); // 使用新的已掌握单词统计
     const totalwordsPromise = calculateCumulativeWords(filterState); // 使用新的累计统计
     const termwordsPromise = calculateTermWords(filterState); // 使用新的当前学期统计
-    const invoiceStatusPromise = sql`SELECT
-         SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
-         SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
-         FROM invoices`;
+    const termwordsmasteredPromise = calculateTermMasteredWords(filterState); // 使用新的当前学期已掌握单词统计
 
     const data = await Promise.all([
       totalwordsmasteredPromise,
       totalwordsPromise,
       termwordsPromise,
-      invoiceStatusPromise,
+      termwordsmasteredPromise,
     ]);
 
     const totalwordsmastered = Number(data[0] ?? '0'); // 这里是已掌握单词数量
     const totalwords = Number(data[1] ?? '0'); // 这里是累计单词数量
     const termwords = Number(data[2] ?? '0'); // 这里是当前学期单词数量
+    const termwordsmastered = Number(data[3] ?? '0'); // 这里是当前学期已掌握单词数量
 
-    const numberOfCustomers = formatCurrency(data[3][0].paid ?? '0');
-    const totalPendingInvoices = formatCurrency(data[3][0].pending ?? '0');
+    const totalPendingInvoices = 0; // 暂时设为0，因为不再使用发票数据
 
     return {
-      numberOfCustomers,
+      termwordsmastered,
       totalwordsmastered,
       totalwords,
       termwords,

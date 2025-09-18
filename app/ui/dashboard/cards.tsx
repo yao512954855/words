@@ -18,7 +18,7 @@ export default async function CardWrapper() {
 
   const {
     totalwordsmastered,
-    numberOfCustomers,
+    termwordsmastered,
     totalwords,
     termwords,
     totalPendingInvoices,
@@ -32,8 +32,8 @@ export default async function CardWrapper() {
       <Card title="termwords" value={termwords} type="pending" />
       <Card title="totalwordsmastered" value={totalwordsmastered} type="invoices" />
       <Card
-        title="Practice count today"
-        value={numberOfCustomers}
+        title="termwordsmastered"
+        value={termwordsmastered}
         type="customers"
       />
     </>
