@@ -28,11 +28,11 @@ export default async function CardWrapper() {
     <>
       {/* NOTE: Uncomment this code in Chapter 9 */}
 
-      <Card title="totalwords" value={totalwords} type="collected" />
-      <Card title="termwords" value={termwords} type="pending" />
-      <Card title="totalwordsmastered" value={totalwordsmastered} type="invoices" />
+      <Card title="总词量" value={totalwords} type="collected" />
+      <Card title="本学期词量" value={termwords} type="pending" />
+      <Card title="已掌握总词量" value={totalwordsmastered} type="invoices" />
       <Card
-        title="termwordsmastered"
+        title="本学期已掌握词量"
         value={termwordsmastered}
         type="customers"
       />

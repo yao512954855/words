@@ -50,7 +50,7 @@ export default function ErrorWordsSection() {
     <div className="flex w-full flex-col">
       <div className="flex items-center justify-between mb-4">
         <h2 className={`${lusitana.className} text-xl md:text-2xl`}>
-          经常错误的单词
+          常错单词
         </h2>
         <div className="flex rounded-lg bg-gray-100 p-1">
           <button

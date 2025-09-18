@@ -45,7 +45,7 @@ export default function FavoriteWordsSection() {
     <div className="flex w-full flex-col">
       <div className="mb-4">
         <h2 className={`${lusitana.className} text-xl md:text-2xl`}>
-          最新收藏单词
+          新收藏单词
         </h2>
       </div>
       

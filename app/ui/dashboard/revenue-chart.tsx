@@ -46,9 +46,9 @@ export default function RevenueChart() {
   const getPeriodTitle = () => {
     switch (timePeriod) {
       case 'monthly':
-        return '月度学习统计';
+        return '月学习统计';
       case 'weekly':
-        return '周度学习统计';
+        return '周学习统计';
       default:
         return '学习统计';
     }

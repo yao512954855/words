@@ -66,7 +66,7 @@ export default function HintWordsSection() {
       <div className="w-full">
         <div className="flex w-full items-center justify-between">
           <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-            经常提示单词
+            常提示单词
           </h2>
         </div>
         <div className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">
@@ -96,7 +96,7 @@ export default function HintWordsSection() {
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
         <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-          经常提示单词
+          常提示单词
         </h2>
       </div>
       <div className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">

@@ -79,9 +79,10 @@ export default function FavoriteWordsPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
-            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+            <ArrowLeftIcon className="h-5 w-5 mr-2" />
+            返回首页
           </Link>
           <h1 className={`${lusitana.className} text-2xl`}>收藏单词列表</h1>
         </div>
