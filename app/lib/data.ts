@@ -1209,5 +1209,197 @@ export async function fetchAllFavoriteWords(
   }
 }
 
+// 获取用户最常点击提示的单词统计
+export async function fetchFrequentHintWords(sortBy: 'count' | 'latest' = 'count') {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return [];
+    }
+
+    const userId = session.user.email;
+    
+    // 首先检查是否有提示数据
+    const hasData = await sql`
+      SELECT COUNT(*) as count FROM word_hint_records WHERE user_id = ${userId}
+    `;
+    
+    if (Number(hasData[0].count) === 0) {
+      // 如果没有提示数据，返回空数组
+      return [];
+    }
+    
+    // 根据排序方式构建不同的查询
+    let data;
+    if (sortBy === 'latest') {
+      data = await sql`
+        SELECT 
+          whr.word_id,
+          whr.word_text,
+          CONCAT('/wordspic/', whr.word_text, '.png') as image_url,
+          whr.hint_count,
+          whr.updated_at as last_hint_at
+        FROM word_hint_records whr
+        WHERE whr.user_id = ${userId}
+        ORDER BY whr.updated_at DESC
+        LIMIT 6
+      `;
+    } else {
+      // 按提示次数排序
+      data = await sql`
+        SELECT 
+          whr.word_id,
+          whr.word_text,
+          CONCAT('/wordspic/', whr.word_text, '.png') as image_url,
+          whr.hint_count,
+          whr.updated_at as last_hint_at
+        FROM word_hint_records whr
+        WHERE whr.user_id = ${userId}
+        ORDER BY whr.hint_count DESC, whr.updated_at DESC
+        LIMIT 6
+      `;
+    }
+
+    return data.map((item: any) => ({
+      word_id: item.word_id,
+      word: item.word_text,
+      hint_count: item.hint_count,
+      image_url: item.image_url,
+      last_hint_at: item.last_hint_at,
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    return [];
+  }
+}
+
+// 获取用户提示记录总数
+export async function fetchHintWordsCount(query: string = '') {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return 0;
+    }
+
+    const userId = session.user.email;
+    
+    let result;
+    if (query) {
+      result = await sql`
+        SELECT COUNT(*) as count 
+        FROM word_hint_records 
+        WHERE user_id = ${userId} 
+        AND word_text ILIKE ${`%${query}%`}
+      `;
+    } else {
+      result = await sql`
+        SELECT COUNT(*) as count FROM word_hint_records WHERE user_id = ${userId}
+      `;
+    }
+    
+    return Number(result[0].count ?? '0');
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
+// 获取用户所有提示记录的详细信息（支持分页）
+export async function fetchAllHintWords(
+  sortBy: 'count' | 'latest' = 'count',
+  page: number = 1,
+  itemsPerPage: number = 15,
+  query: string = ''
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return [];
+    }
+
+    const userId = session.user.email;
+    const offset = (page - 1) * itemsPerPage;
+    
+    // 根据排序方式和搜索条件构建不同的查询
+    let data;
+    if (sortBy === 'latest') {
+      if (query) {
+        data = await sql`
+          SELECT 
+            whr.word_id,
+            whr.word_text,
+            CONCAT('/wordspic/', whr.word_text, '.png') as image_url,
+            whr.hint_count,
+            whr.created_at,
+            whr.updated_at as last_hint_at
+          FROM word_hint_records whr
+          WHERE whr.user_id = ${userId}
+          AND whr.word_text ILIKE ${`%${query}%`}
+          ORDER BY whr.updated_at DESC
+          LIMIT ${itemsPerPage} OFFSET ${offset}
+        `;
+      } else {
+        data = await sql`
+          SELECT 
+            whr.word_id,
+            whr.word_text,
+            CONCAT('/wordspic/', whr.word_text, '.png') as image_url,
+            whr.hint_count,
+            whr.created_at,
+            whr.updated_at as last_hint_at
+          FROM word_hint_records whr
+          WHERE whr.user_id = ${userId}
+          ORDER BY whr.updated_at DESC
+          LIMIT ${itemsPerPage} OFFSET ${offset}
+        `;
+      }
+    } else {
+      // 按提示次数排序
+      if (query) {
+        data = await sql`
+          SELECT 
+            whr.word_id,
+            whr.word_text,
+            CONCAT('/wordspic/', whr.word_text, '.png') as image_url,
+            whr.hint_count,
+            whr.created_at,
+            whr.updated_at as last_hint_at
+          FROM word_hint_records whr
+          WHERE whr.user_id = ${userId}
+          AND whr.word_text ILIKE ${`%${query}%`}
+          ORDER BY whr.hint_count DESC, whr.updated_at DESC
+          LIMIT ${itemsPerPage} OFFSET ${offset}
+        `;
+      } else {
+        data = await sql`
+          SELECT 
+            whr.word_id,
+            whr.word_text,
+            CONCAT('/wordspic/', whr.word_text, '.png') as image_url,
+            whr.hint_count,
+            whr.created_at,
+            whr.updated_at as last_hint_at
+          FROM word_hint_records whr
+          WHERE whr.user_id = ${userId}
+          ORDER BY whr.hint_count DESC, whr.updated_at DESC
+          LIMIT ${itemsPerPage} OFFSET ${offset}
+        `;
+      }
+    }
+
+    return data.map((item: any) => ({
+      word_id: item.word_id,
+      word: item.word_text,
+      hint_count: item.hint_count,
+      image_url: item.image_url,
+      created_at: item.created_at,
+      last_hint_at: item.last_hint_at,
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    return [];
+  }
+}
+
 
 

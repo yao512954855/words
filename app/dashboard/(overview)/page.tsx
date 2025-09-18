@@ -1,14 +1,15 @@
-import { Card } from '@/app/ui/dashboard/cards';
+import CardWrapper from '@/app/ui/dashboard/cards';
 import RevenueChart from '@/app/ui/dashboard/revenue-chart';
 import ErrorWordsSection from '@/app/ui/dashboard/error-words-section';
 import FavoriteWordsSection from '@/app/ui/dashboard/favorite-words-section';
+import HintWordsSection from '@/app/ui/dashboard/hint-words-section';
 import { lusitana } from '@/app/ui/fonts';
-import CardWrapper from '@/app/ui/dashboard/cards';
-// import { fetchRevenue,fetchLatestInvoices,fetchCardData } from '@/app/lib/data'; 
-// import { fetchCardData } from '@/app/lib/data'; 
-
 import { Suspense } from 'react';
-import { LatestInvoicesSkeleton, RevenueChartSkeleton,CardsSkeleton } from '@/app/ui/skeletons';
+import {
+  RevenueChartSkeleton,
+  LatestInvoicesSkeleton,
+  CardsSkeleton,
+} from '@/app/ui/skeletons';
  
 export default async function Page() {
     // const revenue = await fetchRevenue();
@@ -25,17 +26,20 @@ export default async function Page() {
           <CardWrapper />
         </Suspense>
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <Suspense fallback={<RevenueChartSkeleton />}>
-            <RevenueChart  />
+          <RevenueChart />
         </Suspense>
         <Suspense fallback={<LatestInvoicesSkeleton />}>
-            <ErrorWordsSection />
+          <ErrorWordsSection />
         </Suspense>
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <Suspense fallback={<LatestInvoicesSkeleton />}>
-            <FavoriteWordsSection />
+          <FavoriteWordsSection />
+        </Suspense>
+        <Suspense fallback={<LatestInvoicesSkeleton />}>
+          <HintWordsSection />
         </Suspense>
       </div>
     </main>

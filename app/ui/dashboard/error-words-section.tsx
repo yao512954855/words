@@ -47,7 +47,7 @@ export default function ErrorWordsSection() {
   };
 
   return (
-    <div className="flex w-full flex-col md:col-span-4">
+    <div className="flex w-full flex-col">
       <div className="flex items-center justify-between mb-4">
         <h2 className={`${lusitana.className} text-xl md:text-2xl`}>
           经常错误的单词

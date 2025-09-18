@@ -67,7 +67,7 @@ export default function RevenueChart() {
 
   if (error) {
     return (
-      <div className="w-full md:col-span-4">
+      <div className="w-full">
         <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
           学习统计
         </h2>
@@ -82,7 +82,7 @@ export default function RevenueChart() {
   const { yAxisLabels, topLabel } = generateYAxis(wordProgress);
 
   return (
-    <div className="w-full md:col-span-4">
+    <div className="w-full">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
         {getPeriodTitle()}
       </h2>

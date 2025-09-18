@@ -42,7 +42,7 @@ export default function FavoriteWordsSection() {
   }, []);
 
   return (
-    <div className="flex w-full flex-col md:col-span-4">
+    <div className="flex w-full flex-col">
       <div className="mb-4">
         <h2 className={`${lusitana.className} text-xl md:text-2xl`}>
           最新收藏单词
