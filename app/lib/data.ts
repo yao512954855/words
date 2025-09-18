@@ -870,3 +870,61 @@ export async function fetchAllChoiceOptions() {
 
 
 
+
+// 获取用户最常出错的单词统计
+export async function fetchFrequentErrorWords() {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return [];
+    }
+
+    const userId = session.user.email;
+    
+    // 首先检查是否有错误输入数据
+    const hasData = await sql`
+      SELECT COUNT(*) as count FROM word_wrong_inputs WHERE user_id = ${userId}
+    `;
+    
+    if (Number(hasData[0].count) === 0) {
+      // 如果没有错误输入数据，返回空数组
+      return [];
+    }
+    
+    const data = await sql`
+      SELECT 
+        wwi.word_id,
+        wwi.correct_word,
+        COUNT(*) as error_count,
+        c.image_url,
+        MAX(wwi.created_at) as last_error_at
+      FROM word_wrong_inputs wwi
+      LEFT JOIN customers c ON (
+        CASE 
+          WHEN wwi.word_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+          THEN CAST(wwi.word_id AS uuid) = c.id
+          ELSE false
+        END
+      )
+      WHERE wwi.user_id = ${userId}
+      GROUP BY wwi.word_id, wwi.correct_word, c.image_url
+      ORDER BY error_count DESC, last_error_at DESC
+      LIMIT 5
+    `;
+
+    return data.map((item: any) => ({
+      id: item.word_id,
+      name: item.correct_word,
+      email: `错误次数: ${item.error_count}`,
+      image_url: item.image_url || '/customers/default-avatar.png',
+      amount: item.error_count,
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    // 如果出错，返回空数组而不是抛出错误
+    return [];
+  }
+}
+
+
+
