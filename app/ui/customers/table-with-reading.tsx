@@ -42,10 +42,26 @@ export default function TableWithReading({
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
+  const [isReadingCollapsed, setIsReadingCollapsed] = useState(true); // 连续朗读模块折叠状态
+  const [isMobile, setIsMobile] = useState(false); // 是否为移动设备
   
   // 客户端分页状态
   const [clientCurrentPage, setClientCurrentPage] = useState(currentPage);
   const itemsPerPage = 6; // 每页显示的单词数量
+  
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
   
   // 计算当前页显示的数据
   const startIndex = (clientCurrentPage - 1) * itemsPerPage;
@@ -109,13 +125,46 @@ export default function TableWithReading({
     }
   };
 
+  const toggleReadingCollapse = () => {
+    setIsReadingCollapsed(!isReadingCollapsed);
+  };
+
   return (
     <div className="mt-6 flow-root">
-      {/* 连续朗读控制组件 */}
-      <ContinuousReading 
-        words={allCustomers}
-        onWordChange={handleWordChange}
-      />
+      {/* 连续朗读控制组件标题和折叠按钮 */}
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-semibold text-gray-900">连续朗读</h2>
+        {isMobile && (
+          <button 
+            onClick={toggleReadingCollapse}
+            className="p-2 rounded-md text-blue-500 hover:bg-blue-50"
+          >
+            {isReadingCollapsed ? (
+              <div className="flex items-center">
+                <span className="text-sm mr-1">展开</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <span className="text-sm mr-1">收起</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              </div>
+            )}
+          </button>
+        )}
+      </div>
+      
+      {/* 连续朗读控制组件 - 根据折叠状态显示 */}
+      {(!isMobile || !isReadingCollapsed) && (
+        <ContinuousReading 
+          words={allCustomers}
+          onWordChange={handleWordChange}
+        />
+      )}
       
       {isLoadingAll && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
