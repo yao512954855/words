@@ -77,17 +77,21 @@ export default function HintWordsTable({ hintWords }: HintWordsTableProps) {
                     />
                     <p className="text-sm font-medium">{hintWord.word}</p>
                   </div>
-                  <p className={`${lusitana.className} text-sm text-gray-500`}>
+                  <p className={`${lusitana.className} text-sm font-medium text-yellow-600`}>
                     {hintWord.hint_count} 次
                   </p>
                 </div>
                 <div className="flex w-full items-center justify-between pt-4">
                   <div>
-                    <p className="text-xl font-medium">
-                      提示次数: {hintWord.hint_count}
+                    <p className="text-xs text-gray-500">提示次数:</p>
+                    <p className={`${lusitana.className} text-sm font-medium text-yellow-600`}>
+                      {hintWord.hint_count} 次
                     </p>
-                    <p className="text-sm text-gray-500">
-                      最后提示: {new Date(hintWord.last_hint_at).toLocaleDateString('zh-CN')}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">最后提示:</p>
+                    <p className="text-sm">
+                      {new Date(hintWord.last_hint_at).toLocaleDateString('zh-CN')}
                     </p>
                   </div>
                 </div>
@@ -131,12 +135,20 @@ export default function HintWordsTable({ hintWords }: HintWordsTableProps) {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
+                    <p className={`${lusitana.className} font-medium text-yellow-600`}>
                       {hintWord.hint_count} 次
-                    </span>
+                    </p>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
-                    {new Date(hintWord.last_hint_at).toLocaleDateString('zh-CN')}
+                    <p className="text-sm">
+                      {new Date(hintWord.last_hint_at).toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
                   </td>
                 </tr>
               ))}
