@@ -53,13 +53,106 @@ export async function fetchLatestInvoices() {
   }
 }
 
+// 获取用户筛选状态（服务端版本）
+async function getUserFilterStateServer(): Promise<Record<string, string[]>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return {};
+    }
+
+    const userId = session.user.email;
+    
+    const result = await sql`
+      SELECT filter_type, filter_value 
+      FROM user_filter_state 
+      WHERE user_id = ${userId}
+    `;
+
+    const filterState: Record<string, string[]> = {};
+    
+    result.forEach((row: any) => {
+      if (!filterState[row.filter_type]) {
+        filterState[row.filter_type] = [];
+      }
+      filterState[row.filter_type].push(row.filter_value);
+    });
+
+    return filterState;
+  } catch (error) {
+    console.error('Error fetching filter state:', error);
+    return {};
+  }
+}
+
+// 计算累计单词数量
+async function calculateCumulativeWords(filterState: Record<string, string[]>): Promise<number> {
+  try {
+    // 获取当前选择的版本、年级、学期
+    const selectedVersion = filterState.version?.[0];
+    const selectedGrade = filterState.grade?.[0];
+    const selectedClass = filterState.theclass?.[0];
+
+    if (!selectedVersion || !selectedGrade || !selectedClass) {
+      // 如果没有选择筛选条件，返回所有单词数量
+      const result = await sql`SELECT COUNT(*) FROM customers`;
+      return Number(result[0].count ?? '0');
+    }
+
+    // 构建累计查询条件
+    // 例如：选择人教版4年级上册，则统计一年级上到四年级上的所有单词
+    const conditions = [];
+    const params = [];
+
+    // 版本必须匹配
+    conditions.push(`customers.version = $${params.length + 1}`);
+    params.push(selectedVersion);
+
+    // 年级范围：从1年级到当前选择的年级
+    const gradeOrder = ['k1', 'k2', 'k3', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+    const selectedGradeIndex = gradeOrder.indexOf(selectedGrade);
+    
+    if (selectedGradeIndex >= 0) {
+      const cumulativeGrades = gradeOrder.slice(0, selectedGradeIndex + 1);
+      const gradePlaceholders = cumulativeGrades.map((_, index) => `$${params.length + index + 1}`).join(',');
+      conditions.push(`customers.grade IN (${gradePlaceholders})`);
+      params.push(...cumulativeGrades);
+    }
+
+    // 学期条件：如果选择下学期(2)，则包含上学期(1)和下学期(2)；如果选择上学期(1)，则只包含上学期(1)
+    if (selectedClass === '2') {
+      // 下学期：包含上学期和下学期
+      conditions.push(`customers.theclass IN ('1', '2')`);
+    } else {
+      // 上学期：只包含上学期
+      conditions.push(`customers.theclass = '1'`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    const result = await sql.unsafe(`
+      SELECT COUNT(*) 
+      FROM customers 
+      ${whereClause}
+    `, params);
+
+    return Number(result[0].count ?? '0');
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
 export async function fetchCardData() {
   try {
+    // 获取用户筛选状态
+    const filterState = await getUserFilterStateServer();
+    
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
     const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
-    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
+    const customerCountPromise = calculateCumulativeWords(filterState); // 使用新的累计统计
     const invoiceStatusPromise = sql`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
@@ -72,8 +165,9 @@ export async function fetchCardData() {
     ]);
 
     const numberOfInvoices = Number(data[0][0].count ?? '0');
-    const numberOfCustomers = Number(data[1][0].count ?? '0');
-    const totalPaidInvoices = formatCurrency(data[2][0].paid ?? '0');
+    const totalPaidInvoices = Number(data[1] ?? '0'); // 这里是累计单词数量
+
+    const numberOfCustomers = formatCurrency(data[2][0].paid ?? '0');
     const totalPendingInvoices = formatCurrency(data[2][0].pending ?? '0');
 
     return {
