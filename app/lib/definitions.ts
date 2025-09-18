@@ -157,3 +157,12 @@ export type WordHintRecord = {
   created_at: string;
   updated_at: string;
 };
+
+export type WordFavorite = {
+  id: string;
+  user_id: string;
+  word_id: string;
+  word_text: string;
+  created_at: string;
+  updated_at: string;
+};
