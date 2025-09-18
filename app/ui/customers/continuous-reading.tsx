@@ -214,7 +214,13 @@ export default function ContinuousReading({ words, onWordChange }: ContinuousRea
           }, settings.interval * 1000);
         } else {
           // 所有单词播放完毕
-          stopReading();
+          // 停止播放但保持最后一个单词的高亮状态
+          setIsPlaying(false);
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
+          setIsReading(false);
         }
       }
     } else {
@@ -284,8 +290,9 @@ export default function ContinuousReading({ words, onWordChange }: ContinuousRea
     }
     setIsReading(false);
     
-    // 通知父组件重置
-    onWordChange?.(-1, null);
+    // 不再通知父组件重置为-1，保持当前单词的高亮状态
+    // 如果需要重置，可以传递最后一个有效索引
+    // onWordChange?.(currentIndex, words[currentIndex]);
   };
 
   // 继续播放
@@ -405,7 +412,7 @@ export default function ContinuousReading({ words, onWordChange }: ContinuousRea
             <div 
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ 
-                width: `${words.length > 0 ? ((currentIndex + (currentRepeat / settings.repeatCount)) / words.length) * 100 : 0}%` 
+                width: `${words.length > 1 ? (((currentIndex) / (words.length - 1)) * 100) : (currentIndex === 0 ? 0 : 100)}%` 
               }}
             />
           </div>

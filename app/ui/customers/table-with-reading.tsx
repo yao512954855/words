@@ -107,15 +107,19 @@ export default function TableWithReading({
   }, [currentPage]);
 
   const handleWordChange = (index: number, word: any) => {
-    setCurrentWordIndex(index);
-    
-    // 自动翻页：如果当前朗读的单词不在当前页，自动跳转到对应页面
-    if (allCustomers.length > 0) {
-      const targetPage = Math.floor(index / itemsPerPage) + 1;
-      if (targetPage !== clientCurrentPage) {
-        setClientCurrentPage(targetPage);
+    // 当朗读完成时，index为-1，保持当前单词索引不变
+    if (index >= 0) {
+      setCurrentWordIndex(index);
+      
+      // 自动翻页：如果当前朗读的单词不在当前页，自动跳转到对应页面
+      if (allCustomers.length > 0) {
+        const targetPage = Math.floor(index / itemsPerPage) + 1;
+        if (targetPage !== clientCurrentPage) {
+          setClientCurrentPage(targetPage);
+        }
       }
     }
+    // 当朗读完成时(index为-1)，不改变currentWordIndex，保持最后一个单词的高亮状态
   };
 
   // 手动翻页函数（不会中断朗读）
