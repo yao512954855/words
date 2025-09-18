@@ -30,7 +30,7 @@ export default async function CustomersTable({
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
           <div className="md:hidden">
-            {customers?.map((customer) => (
+            {customers?.map((customer, index) => (
               <div
                 key={customer.id}
                 className="mb-2 w-full rounded-md bg-white p-4"
@@ -44,6 +44,7 @@ export default async function CustomersTable({
                         width={256}
                         height={256}
                         alt={`${customer.name}'s profile picture`}
+                        priority={index === 0}
                       />
 
                     </div>
@@ -102,7 +103,7 @@ export default async function CustomersTable({
               </tr>
             </thead>
             <tbody className="bg-white">
-              {customers?.map((customer) => (
+              {customers?.map((customer, index) => (
                 <tr
                   key={customer.id}
                   className="w-full border-b py-3 text-lg last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
@@ -115,6 +116,7 @@ export default async function CustomersTable({
                         width={256}
                         height={256}
                         alt={`${customer.name}'s profile picture`}
+                        priority={index === 0}
                       />
                       {/* <p>{customer.name}</p> */}
                     </div>

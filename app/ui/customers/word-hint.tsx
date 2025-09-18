@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { EyeIcon, EyeSlashIcon, HeartIcon, LanguageIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, HeartIcon, LanguageIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { audioCache } from '@/app/lib/audio-cache';
 
 interface WordHintProps {
   word: string;
@@ -16,6 +17,17 @@ export default function WordHint({ word, wordId }: WordHintProps) {
   const [translation, setTranslation] = useState<string>('');
   const [showTranslation, setShowTranslation] = useState(false);
   const [isLoadingTranslation, setIsLoadingTranslation] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  // 检查语音功能支持（现在有服务器端音频作为主要方案）
+  useEffect(() => {
+    console.log('🔍 Initializing speech functionality...');
+    // 现在我们有服务器端音频作为主要方案，浏览器TTS作为降级方案
+    // 所以总是启用语音功能
+    setSpeechSupported(true);
+    console.log('✅ Speech functionality enabled (server audio + browser TTS fallback)');
+  }, []);
 
   // 检查收藏状态
   useEffect(() => {
@@ -122,6 +134,178 @@ export default function WordHint({ word, wordId }: WordHintProps) {
     }
   };
 
+  const speakWord = async () => {
+    console.log('🔊 speakWord called, isSpeaking:', isSpeaking);
+    
+    if (isSpeaking) {
+      console.log('❌ Already speaking');
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+      console.log('🚀 Starting audio generation for word:', word);
+
+      // 方案1: 尝试使用缓存的音频文件
+      let audio = await audioCache.getAudio(word);
+      
+      if (!audio) {
+        // 缓存未命中，从服务器获取音频
+        try {
+          const audioResponse = await fetch(`/api/audio?text=${encodeURIComponent(word)}`);
+          
+          if (audioResponse.ok) {
+            const audioData = await audioResponse.json();
+            
+            // 检查是否需要降级到浏览器TTS
+            if (audioData.fallback || !audioData.success) {
+              console.log('🔄 Server returned fallback response, using browser TTS');
+              fallbackToSpeechSynthesis();
+              return;
+            }
+            
+            if (audioData.success && audioData.audioUrl) {
+              console.log('✅ Got audio URL:', audioData.audioUrl);
+              
+              // 缓存音频并获取Audio对象
+              audio = await audioCache.cacheAudio(word, audioData.audioUrl);
+            }
+          } else {
+            console.log('⚠️ Server audio API returned error status:', audioResponse.status);
+          }
+        } catch (error) {
+          console.log('⚠️ Server audio failed, falling back to browser TTS:', error);
+        }
+      }
+
+      // 如果有音频对象，播放它
+      if (audio) {
+        // 重置音频到开始位置
+        audio.currentTime = 0;
+        
+        // 设置事件监听器
+        const handleLoadStart = () => console.log('🎵 Audio loading started');
+        const handleCanPlay = () => console.log('🎵 Audio can play');
+        const handlePlay = () => console.log('✅ Audio playback started');
+        const handleEnded = () => {
+          console.log('✅ Audio playback ended');
+          setIsSpeaking(false);
+          // 清理事件监听器
+          audio!.removeEventListener('loadstart', handleLoadStart);
+          audio!.removeEventListener('canplay', handleCanPlay);
+          audio!.removeEventListener('play', handlePlay);
+          audio!.removeEventListener('ended', handleEnded);
+          audio!.removeEventListener('error', handleError);
+        };
+        const handleError = (e: Event) => {
+          console.log('❌ Audio playback error:', e);
+          setIsSpeaking(false);
+          // 清理事件监听器
+          audio!.removeEventListener('loadstart', handleLoadStart);
+          audio!.removeEventListener('canplay', handleCanPlay);
+          audio!.removeEventListener('play', handlePlay);
+          audio!.removeEventListener('ended', handleEnded);
+          audio!.removeEventListener('error', handleError);
+          // 降级到浏览器TTS
+          fallbackToSpeechSynthesis();
+        };
+        
+        // 添加事件监听器
+        audio.addEventListener('loadstart', handleLoadStart);
+        audio.addEventListener('canplay', handleCanPlay);
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('error', handleError);
+        
+        try {
+          // 开始播放音频
+          await audio.play();
+          return; // 成功播放，直接返回
+        } catch (playError) {
+          console.log('❌ Audio play failed:', playError);
+          // 清理事件监听器
+          audio.removeEventListener('loadstart', handleLoadStart);
+          audio.removeEventListener('canplay', handleCanPlay);
+          audio.removeEventListener('play', handlePlay);
+          audio.removeEventListener('ended', handleEnded);
+          audio.removeEventListener('error', handleError);
+        }
+      }
+
+      // 方案2: 降级到浏览器的SpeechSynthesis
+      fallbackToSpeechSynthesis();
+
+    } catch (error) {
+      console.error('❌ Speech failed completely:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  // 降级方案：使用浏览器的SpeechSynthesis
+  const fallbackToSpeechSynthesis = async () => {
+    console.log('🔄 Using browser SpeechSynthesis as fallback');
+    
+    try {
+      // 检查浏览器支持
+      if (!('speechSynthesis' in window)) {
+        console.log('❌ SpeechSynthesis not supported');
+        setIsSpeaking(false);
+        return;
+      }
+
+      // 停止当前正在播放的语音
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const utterance = new SpeechSynthesisUtterance(word);
+      
+      // 设置语音参数
+      utterance.lang = 'en-US';
+      utterance.rate = 0.8;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      // 设置事件监听器
+      utterance.onstart = () => {
+        console.log('✅ Browser speech started');
+      };
+
+      utterance.onend = () => {
+        console.log('✅ Browser speech ended');
+        setIsSpeaking(false);
+      };
+
+      utterance.onerror = (event) => {
+        console.log('❌ Browser speech error:', event.error);
+        setIsSpeaking(false);
+      };
+
+      // 获取可用的语音
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+      
+      if (englishVoices.length > 0) {
+        // 优先选择美式英语语音
+        const preferredVoice = englishVoices.find(voice => 
+          voice.lang === 'en-US'
+        ) || englishVoices[0];
+        
+        utterance.voice = preferredVoice;
+        console.log('🎯 Using voice:', preferredVoice.name);
+      }
+
+      // 开始朗读
+      console.log('🚀 Starting browser speech synthesis...');
+      window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+      console.error('❌ Browser speech synthesis failed:', error);
+      setIsSpeaking(false);
+    }
+  };
+
   const toggleVisibility = () => {
     if (!isVisible) {
       // 只在显示提示时记录点击
@@ -186,6 +370,23 @@ export default function WordHint({ word, wordId }: WordHintProps) {
         <LanguageIcon className="w-3 h-3" />
         {isLoadingTranslation ? '翻译中...' : showTranslation ? '隐藏翻译' : '翻译'}
       </button>
+
+      {speechSupported && (
+        <button
+          onClick={speakWord}
+          disabled={isSpeaking}
+          className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
+            isSpeaking 
+              ? 'bg-orange-100 text-orange-600 cursor-not-allowed' 
+              : 'bg-gray-100 hover:bg-orange-200 text-gray-600 hover:text-orange-600'
+          }`}
+          type="button"
+          title="朗读单词"
+        >
+          <SpeakerWaveIcon className="w-3 h-3" />
+          {isSpeaking ? '朗读中...' : '朗读'}
+        </button>
+      )}
       
       {isVisible && (
         <span className="text-sm font-medium text-blue-600">
