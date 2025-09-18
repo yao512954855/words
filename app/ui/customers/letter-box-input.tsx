@@ -38,7 +38,7 @@ export default function Search({ placeholder,word,id }: { placeholder: string,wo
   const handleSearch = useDebouncedCallback((term) => {
     console.log(`Searching... ${term}`);
 
-    if (term == word) {
+    if (term.toLowerCase() === word.toLowerCase()) {
       console.log('匹配成功');
       console.log(`id: ${id}`);
       

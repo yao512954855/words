@@ -95,7 +95,7 @@ export default function Page() {
             <ArrowLeftIcon className="h-5 w-5 mr-2" />
             返回首页
           </Link>
-          <h1 className={`${lusitana.className} text-2xl`}>经常提示单词</h1>
+          <h1 className={`${lusitana.className} text-2xl`}>常提示单词</h1>
         </div>
       </div>
 
