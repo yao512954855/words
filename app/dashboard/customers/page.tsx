@@ -8,7 +8,42 @@ import { CreateCustomers } from '@/app/ui/customers/buttons';
 import { Suspense } from 'react';
 import { CustomersTableSkeleton } from '@/app/ui/skeletons';
 import CustomersFilters from '@/app/ui/customers/filters';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
+const sql = postgres(process.env.POSTGRES_URL!);
+
+// 获取用户筛选状态（服务端版本）
+async function getUserFilterStateServer(): Promise<Record<string, string[]>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return {};
+    }
+
+    const userId = session.user.email;
+    
+    const result = await sql`
+      SELECT filter_type, filter_value 
+      FROM user_filter_state 
+      WHERE user_id = ${userId}
+    `;
+
+    const filterState: Record<string, string[]> = {};
+    
+    result.forEach((row: any) => {
+      if (!filterState[row.filter_type]) {
+        filterState[row.filter_type] = [];
+      }
+      filterState[row.filter_type].push(row.filter_value);
+    });
+
+    return filterState;
+  } catch (error) {
+    console.error('Error fetching filter state:', error);
+    return {};
+  }
+}
 
 export default async function CustomersPage(props: {
   searchParams?: Promise<{
@@ -25,6 +60,32 @@ export default async function CustomersPage(props: {
   const searchParams = await props.searchParams;
   const query = searchParams?.query || '';
   const currentPage = Number(searchParams?.page) || 1;
+  
+  // 检查是否有URL筛选参数
+  const hasUrlFilters = searchParams?.version || searchParams?.grade || 
+                       searchParams?.theclass || searchParams?.theunit || 
+                       searchParams?.ok;
+  
+  // 如果没有URL筛选参数，获取用户保存的筛选状态并重定向
+  if (!hasUrlFilters) {
+    const savedFilterState = await getUserFilterStateServer();
+    if (Object.keys(savedFilterState).length > 0) {
+      const params = new URLSearchParams();
+      
+      // 保持现有的查询参数
+      if (query) params.set('query', query);
+      if (currentPage > 1) params.set('page', currentPage.toString());
+      
+      // 应用保存的筛选状态
+      Object.entries(savedFilterState).forEach(([filterType, values]) => {
+        if (Array.isArray(values) && values.length > 0) {
+          params.set(filterType, values[0]); // 取第一个值
+        }
+      });
+      
+      redirect(`/dashboard/customers?${params.toString()}`);
+    }
+  }
   
   // 获取筛选参数
   const filters = {

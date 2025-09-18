@@ -33,27 +33,32 @@ export const generateYAxis = (revenue: Revenue[]) => {
   if (highestRecord <= 10) {
     // For very small numbers, use step of 2
     topLabel = Math.ceil(highestRecord / 2) * 2;
-    step = Math.max(1, topLabel / 5);
+    step = Math.round(Math.max(1, topLabel / 5));
   } else if (highestRecord <= 50) {
     // For small numbers, use step of 10
     topLabel = Math.ceil(highestRecord / 10) * 10;
-    step = Math.max(5, topLabel / 5);
+    step = Math.round(Math.max(5, topLabel / 5));
   } else if (highestRecord <= 200) {
     // For medium numbers, use step of 20
     topLabel = Math.ceil(highestRecord / 20) * 20;
-    step = Math.max(10, topLabel / 5);
+    step = Math.round(Math.max(10, topLabel / 5));
   } else if (highestRecord <= 1000) {
     // For larger numbers, use step of 100
     topLabel = Math.ceil(highestRecord / 100) * 100;
-    step = Math.max(50, topLabel / 5);
+    step = Math.round(Math.max(50, topLabel / 5));
   } else {
     // For very large numbers, use step of 1000
     topLabel = Math.ceil(highestRecord / 1000) * 1000;
-    step = Math.max(200, topLabel / 5);
+    step = Math.round(Math.max(200, topLabel / 5));
   }
 
-  for (let i = topLabel; i >= 0; i -= step) {
-    yAxisLabels.push(`${i}`);
+  // Use integer-based loop to avoid floating point precision issues
+  const numSteps = Math.floor(topLabel / step);
+  for (let i = 0; i <= numSteps; i++) {
+    const value = topLabel - (i * step);
+    if (value >= 0) {
+      yAxisLabels.push(`${value}`);
+    }
   }
 
   return { yAxisLabels, topLabel };

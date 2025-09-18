@@ -17,7 +17,6 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(true); // 手机端折叠状态
 
   // 从URL参数获取当前筛选状态
@@ -26,39 +25,6 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   const currentClass = searchParams.get('theclass') || 'all';
   const currentUnit = searchParams.get('theunit') || 'all';
   const currentOk = searchParams.get('ok') || 'all';
-
-  // 加载用户保存的筛选状态
-  useEffect(() => {
-    const loadFilterState = async () => {
-      try {
-        const savedState = await getUserFilterState();
-        
-        // 如果有保存的状态且当前URL没有筛选参数，则应用保存的状态
-        const hasUrlFilters = searchParams.get('version') || searchParams.get('grade') || 
-                             searchParams.get('theclass') || searchParams.get('theunit') || 
-                             searchParams.get('ok');
-        
-        if (!hasUrlFilters && Object.keys(savedState).length > 0) {
-          const params = new URLSearchParams(searchParams);
-          
-          // 应用保存的筛选状态到URL
-          Object.entries(savedState).forEach(([filterType, values]) => {
-            if (Array.isArray(values) && values.length > 0) {
-              params.set(filterType, values[0]); // 取第一个值
-            }
-          });
-          
-          replace(`${pathname}?${params.toString()}`);
-        }
-      } catch (error) {
-        console.error('Failed to load filter state:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadFilterState();
-  }, []);
 
   // 保存筛选状态到数据库
   const saveFilterState = async (updatedParams: URLSearchParams) => {

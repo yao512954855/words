@@ -37,8 +37,6 @@ export async function fetchRevenue() {
 export async function fetchMonthlyWordProgress() {
   try {
     console.log('Fetching monthly word progress data...');
-    
-    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // 获取当前用户信息
     const session = await auth();
@@ -53,8 +51,20 @@ export async function fetchMonthlyWordProgress() {
     let query;
     let params;
 
+    // 简化查询逻辑，使用更高效的方式
+    const baseConditions = [
+      'uwp.user_id = $1',
+      'uwp.is_learned = true',
+      'uwp.learned_at IS NOT NULL',
+      'EXTRACT(YEAR FROM uwp.learned_at) = EXTRACT(YEAR FROM CURRENT_DATE)'
+    ];
+    
+    params = [userId];
+    
     if (selectedVersion && selectedGrade && selectedClass) {
-      // 有筛选条件时，只统计符合条件的单词
+      baseConditions.push('c.version = $2', 'c.grade = $3', 'c.theclass = $4');
+      params.push(selectedVersion, selectedGrade, selectedClass);
+      
       query = `
         WITH months AS (
           SELECT 
@@ -65,21 +75,16 @@ export async function fetchMonthlyWordProgress() {
           m.month,
           COALESCE(COUNT(uwp.id), 0) as revenue
         FROM months m
-        LEFT JOIN user_word_progress uwp ON date_trunc('month', uwp.learned_at) = m.month_date
-          AND uwp.user_id = $1
-          AND uwp.is_learned = true
-          AND uwp.learned_at IS NOT NULL
-          AND EXTRACT(YEAR FROM uwp.learned_at) = EXTRACT(YEAR FROM CURRENT_DATE)
-        LEFT JOIN customers c ON uwp.word_id = c.id
-          AND c.version = $2
-          AND c.grade = $3
-          AND c.theclass = $4
+        LEFT JOIN (
+          SELECT uwp.*, date_trunc('month', uwp.learned_at) as month_learned
+          FROM user_word_progress uwp
+          INNER JOIN customers c ON uwp.word_id = c.id
+          WHERE ${baseConditions.join(' AND ')}
+        ) uwp ON uwp.month_learned = m.month_date
         GROUP BY m.month, m.month_date
         ORDER BY m.month_date
       `;
-      params = [userId, selectedVersion, selectedGrade, selectedClass];
     } else {
-      // 无筛选条件时，统计所有学习的单词
       query = `
         WITH months AS (
           SELECT 
@@ -90,15 +95,14 @@ export async function fetchMonthlyWordProgress() {
           m.month,
           COALESCE(COUNT(uwp.id), 0) as revenue
         FROM months m
-        LEFT JOIN user_word_progress uwp ON date_trunc('month', uwp.learned_at) = m.month_date
-          AND uwp.user_id = $1
-          AND uwp.is_learned = true
-          AND uwp.learned_at IS NOT NULL
-          AND EXTRACT(YEAR FROM uwp.learned_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+        LEFT JOIN (
+          SELECT uwp.*, date_trunc('month', uwp.learned_at) as month_learned
+          FROM user_word_progress uwp
+          WHERE ${baseConditions.join(' AND ')}
+        ) uwp ON uwp.month_learned = m.month_date
         GROUP BY m.month, m.month_date
         ORDER BY m.month_date
       `;
-      params = [userId];
     }
 
     const data = await sql.unsafe(query, params);
@@ -119,8 +123,6 @@ export async function fetchMonthlyWordProgress() {
 export async function fetchWeeklyWordProgress() {
   try {
     console.log('Fetching weekly word progress data...');
-    
-    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // 获取当前用户信息
     const session = await auth();
@@ -135,8 +137,19 @@ export async function fetchWeeklyWordProgress() {
     let query;
     let params;
 
+    // 简化查询逻辑，使用更高效的方式
+    const baseConditions = [
+      'uwp.user_id = $1',
+      'uwp.is_learned = true',
+      'uwp.learned_at IS NOT NULL'
+    ];
+    
+    params = [userId];
+    
     if (selectedVersion && selectedGrade && selectedClass) {
-      // 有筛选条件时，只统计符合条件的单词
+      baseConditions.push('c.version = $2', 'c.grade = $3', 'c.theclass = $4');
+      params.push(selectedVersion, selectedGrade, selectedClass);
+      
       query = `
         WITH week_days AS (
           SELECT 
@@ -147,20 +160,16 @@ export async function fetchWeeklyWordProgress() {
           wd.day_name as month,
           COALESCE(COUNT(uwp.id), 0) as revenue
         FROM week_days wd
-        LEFT JOIN user_word_progress uwp ON date_trunc('day', uwp.learned_at) = wd.day_date
-          AND uwp.user_id = $1
-          AND uwp.is_learned = true
-          AND uwp.learned_at IS NOT NULL
-        LEFT JOIN customers c ON uwp.word_id = c.id
-          AND c.version = $2
-          AND c.grade = $3
-          AND c.theclass = $4
+        LEFT JOIN (
+          SELECT uwp.*, date_trunc('day', uwp.learned_at) as day_learned
+          FROM user_word_progress uwp
+          INNER JOIN customers c ON uwp.word_id = c.id
+          WHERE ${baseConditions.join(' AND ')}
+        ) uwp ON uwp.day_learned = wd.day_date
         GROUP BY wd.day_name, wd.day_date
         ORDER BY wd.day_date
       `;
-      params = [userId, selectedVersion, selectedGrade, selectedClass];
     } else {
-      // 无筛选条件时，统计所有学习的单词
       query = `
         WITH week_days AS (
           SELECT 
@@ -171,14 +180,14 @@ export async function fetchWeeklyWordProgress() {
           wd.day_name as month,
           COALESCE(COUNT(uwp.id), 0) as revenue
         FROM week_days wd
-        LEFT JOIN user_word_progress uwp ON date_trunc('day', uwp.learned_at) = wd.day_date
-          AND uwp.user_id = $1
-          AND uwp.is_learned = true
-          AND uwp.learned_at IS NOT NULL
+        LEFT JOIN (
+          SELECT uwp.*, date_trunc('day', uwp.learned_at) as day_learned
+          FROM user_word_progress uwp
+          WHERE ${baseConditions.join(' AND ')}
+        ) uwp ON uwp.day_learned = wd.day_date
         GROUP BY wd.day_name, wd.day_date
         ORDER BY wd.day_date
       `;
-      params = [userId];
     }
 
     const data = await sql.unsafe(query, params);
