@@ -671,10 +671,11 @@ export async function fetchCustomersPages(
     if (query) {
       conditions.push(`(
         customers.name ILIKE $${params.length + 1} OR 
-        customers.email ILIKE $${params.length + 2} OR
-        customers.chinese_translation ILIKE $${params.length + 3}
+        customers.chinese_translation ILIKE $${params.length + 2} OR
+        customers.email ILIKE $${params.length + 3}
       )`);
       params.push(`%${query}%`, `%${query}%`, `%${query}%`);
+      // 搜索时移除默认的学习进度限制，确保能找到所有匹配的单词
     }
 
     if (filters?.version) {
@@ -704,6 +705,9 @@ export async function fetchCustomersPages(
         conditions.push(`uwp.is_learned = true`);
       }
       // 如果filters.ok存在但不是'0'或'1'，则显示全部（不添加任何条件）
+    } else if (!query) {
+      // 只有在非搜索模式下才添加默认的学习进度限制
+      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -771,19 +775,16 @@ export async function fetchFilteredCustomers(
     const conditions = [];
     const params = [userId]; // 第一个参数是用户ID
 
+    // 添加搜索条件
     if (query) {
       conditions.push(`(
         customers.name ILIKE $${params.length + 1} OR 
-        customers.email ILIKE $${params.length + 2} OR
-        EXISTS (
-          SELECT 1 FROM word_translations 
-          WHERE LOWER(word_translations.word_text) = LOWER(customers.name) 
-          AND word_translations.chinese_translation ILIKE $${params.length + 3}
-        )
+        customers.chinese_translation ILIKE $${params.length + 2}
       )`);
-      params.push(`%${query}%`, `%${query}%`, `%${query}%`);
+      params.push(`%${query}%`, `%${query}%`);
     }
-
+    
+    // 无论是否搜索，都应用所有筛选条件
     if (filters?.version) {
       conditions.push(`customers.version = $${params.length + 1}`);
       params.push(filters.version);
@@ -811,14 +812,19 @@ export async function fetchFilteredCustomers(
         conditions.push(`uwp.is_learned = true`);
       }
       // 如果filters.ok存在但不是'0'或'1'，则显示全部（不添加任何条件）
+    } else if (!query) {
+      // 非搜索模式下的默认学习进度限制
+      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
     }
 
+    // 移除默认的学习进度限制，确保搜索时能找到所有匹配的单词
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
     // 添加LIMIT和OFFSET参数
     params.push(String(ITEMS_PER_PAGE2), String(offset));
     
-    const result = await sql.unsafe(`
+    // 如果是搜索查询，不添加默认的学习进度限制
+    let sqlQuery = `
       SELECT
         customers.id,
         customers.name,
@@ -839,7 +845,9 @@ export async function fetchFilteredCustomers(
       ${whereClause}
       ORDER BY customers.orderid ASC
       LIMIT $${params.length - 1} OFFSET $${params.length}
-    `, params);
+    `;
+    
+    const result = await sql.unsafe(sqlQuery, params);
 
     // 将查询结果转换为Customer[]类型
     const customers: Customer[] = result.map((row: any) => ({

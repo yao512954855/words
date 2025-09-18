@@ -66,8 +66,11 @@ export default function TableWithReading({
   // 计算当前页显示的数据
   const startIndex = (clientCurrentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentPageCustomers = allCustomers.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(allCustomers.length / itemsPerPage);
+  // 如果allCustomers为空，则使用initialCustomers作为当前页数据
+  const currentPageCustomers = allCustomers.length > 0 
+    ? allCustomers.slice(startIndex, endIndex) 
+    : initialCustomers;
+  const totalPages = Math.ceil((allCustomers.length || initialCustomers.length) / itemsPerPage);
 
   // 获取所有符合筛选条件的单词（用于连续朗读）
   const fetchAllFilteredCustomers = async () => {
