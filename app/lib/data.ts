@@ -33,6 +33,170 @@ export async function fetchRevenue() {
   }
 }
 
+// 按月统计用户学习单词数量
+export async function fetchMonthlyWordProgress() {
+  try {
+    console.log('Fetching monthly word progress data...');
+    
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // 获取当前用户信息
+    const session = await auth();
+    const userId = session?.user?.email || 'anonymous';
+
+    // 获取用户筛选状态
+    const filterState = await getUserFilterStateServer();
+    const selectedVersion = filterState.version?.[0];
+    const selectedGrade = filterState.grade?.[0];
+    const selectedClass = filterState.theclass?.[0];
+
+    let query;
+    let params;
+
+    if (selectedVersion && selectedGrade && selectedClass) {
+      // 有筛选条件时，只统计符合条件的单词
+      query = `
+        WITH months AS (
+          SELECT 
+            TO_CHAR(date_trunc('month', date_trunc('year', CURRENT_DATE) + INTERVAL '1 month' * generate_series(0, 11)), 'Mon') as month,
+            date_trunc('month', date_trunc('year', CURRENT_DATE) + INTERVAL '1 month' * generate_series(0, 11)) as month_date
+        )
+        SELECT 
+          m.month,
+          COALESCE(COUNT(uwp.id), 0) as revenue
+        FROM months m
+        LEFT JOIN user_word_progress uwp ON date_trunc('month', uwp.learned_at) = m.month_date
+          AND uwp.user_id = $1
+          AND uwp.is_learned = true
+          AND uwp.learned_at IS NOT NULL
+          AND EXTRACT(YEAR FROM uwp.learned_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+        LEFT JOIN customers c ON uwp.word_id = c.id
+          AND c.version = $2
+          AND c.grade = $3
+          AND c.theclass = $4
+        GROUP BY m.month, m.month_date
+        ORDER BY m.month_date
+      `;
+      params = [userId, selectedVersion, selectedGrade, selectedClass];
+    } else {
+      // 无筛选条件时，统计所有学习的单词
+      query = `
+        WITH months AS (
+          SELECT 
+            TO_CHAR(date_trunc('month', date_trunc('year', CURRENT_DATE) + INTERVAL '1 month' * generate_series(0, 11)), 'Mon') as month,
+            date_trunc('month', date_trunc('year', CURRENT_DATE) + INTERVAL '1 month' * generate_series(0, 11)) as month_date
+        )
+        SELECT 
+          m.month,
+          COALESCE(COUNT(uwp.id), 0) as revenue
+        FROM months m
+        LEFT JOIN user_word_progress uwp ON date_trunc('month', uwp.learned_at) = m.month_date
+          AND uwp.user_id = $1
+          AND uwp.is_learned = true
+          AND uwp.learned_at IS NOT NULL
+          AND EXTRACT(YEAR FROM uwp.learned_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+        GROUP BY m.month, m.month_date
+        ORDER BY m.month_date
+      `;
+      params = [userId];
+    }
+
+    const data = await sql.unsafe(query, params);
+
+    console.log('Monthly word progress data fetch completed after 3 seconds.');
+
+    return data.map((row: any) => ({
+      month: row.month,
+      revenue: Number(row.revenue)
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch monthly word progress data.');
+  }
+}
+
+// 按周统计用户学习单词数量
+export async function fetchWeeklyWordProgress() {
+  try {
+    console.log('Fetching weekly word progress data...');
+    
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // 获取当前用户信息
+    const session = await auth();
+    const userId = session?.user?.email || 'anonymous';
+
+    // 获取用户筛选状态
+    const filterState = await getUserFilterStateServer();
+    const selectedVersion = filterState.version?.[0];
+    const selectedGrade = filterState.grade?.[0];
+    const selectedClass = filterState.theclass?.[0];
+
+    let query;
+    let params;
+
+    if (selectedVersion && selectedGrade && selectedClass) {
+      // 有筛选条件时，只统计符合条件的单词
+      query = `
+        WITH week_days AS (
+          SELECT 
+            TO_CHAR(date_trunc('week', CURRENT_DATE) + INTERVAL '1 day' * generate_series(0, 6), 'Dy') as day_name,
+            date_trunc('day', date_trunc('week', CURRENT_DATE) + INTERVAL '1 day' * generate_series(0, 6)) as day_date
+        )
+        SELECT 
+          wd.day_name as month,
+          COALESCE(COUNT(uwp.id), 0) as revenue
+        FROM week_days wd
+        LEFT JOIN user_word_progress uwp ON date_trunc('day', uwp.learned_at) = wd.day_date
+          AND uwp.user_id = $1
+          AND uwp.is_learned = true
+          AND uwp.learned_at IS NOT NULL
+        LEFT JOIN customers c ON uwp.word_id = c.id
+          AND c.version = $2
+          AND c.grade = $3
+          AND c.theclass = $4
+        GROUP BY wd.day_name, wd.day_date
+        ORDER BY wd.day_date
+      `;
+      params = [userId, selectedVersion, selectedGrade, selectedClass];
+    } else {
+      // 无筛选条件时，统计所有学习的单词
+      query = `
+        WITH week_days AS (
+          SELECT 
+            TO_CHAR(date_trunc('week', CURRENT_DATE) + INTERVAL '1 day' * generate_series(0, 6), 'Dy') as day_name,
+            date_trunc('day', date_trunc('week', CURRENT_DATE) + INTERVAL '1 day' * generate_series(0, 6)) as day_date
+        )
+        SELECT 
+          wd.day_name as month,
+          COALESCE(COUNT(uwp.id), 0) as revenue
+        FROM week_days wd
+        LEFT JOIN user_word_progress uwp ON date_trunc('day', uwp.learned_at) = wd.day_date
+          AND uwp.user_id = $1
+          AND uwp.is_learned = true
+          AND uwp.learned_at IS NOT NULL
+        GROUP BY wd.day_name, wd.day_date
+        ORDER BY wd.day_date
+      `;
+      params = [userId];
+    }
+
+    const data = await sql.unsafe(query, params);
+
+    console.log('Weekly word progress data fetch completed after 3 seconds.');
+
+    return data.map((row: any) => ({
+      month: row.month,
+      revenue: Number(row.revenue)
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch weekly word progress data.');
+  }
+}
+
+
+
 export async function fetchLatestInvoices() {
   try {
     const data = await sql<LatestInvoiceRaw[]>`
