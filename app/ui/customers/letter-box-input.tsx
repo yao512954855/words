@@ -58,16 +58,29 @@ export default function Search({ placeholder,word,id }: { placeholder: string,wo
       setIsCorrect(false);
       setShowSuccess(false);
       
-      // 检查是否是长度匹配但内容错误的情况
-      if (term && term.length === word.length && term !== word) {
-        console.log('长度匹配但内容错误:', term, 'vs', word);
+      // 检查是否有输入内容且不为空
+      if (term && term.trim() !== '') {
+        console.log('输入错误:', term, 'vs', word);
         
-        // 记录错误输入
-        recordWrongInput(term);
+        // 根据输入长度设置不同的错误提示
+        let errorMsg = '';
+        if (term.length > word.length) {
+          errorMsg = `输入字母过多！正确长度为${word.length}个字母`;
+        } else if (term.length === word.length) {
+          errorMsg = '输入错误，再好好想想！';
+        }
+        // 输入不足时不显示错误提示
         
-        // 显示错误提示
-        setErrorMessage('输入错误，再好好想想！');
-        setShowError(true);
+        // 只有当输入长度等于单词长度时才记录错误输入
+        if (term.length === word.length) {
+          recordWrongInput(term);
+        }
+        
+        // 只有在有错误消息时才显示错误提示
+        if (errorMsg) {
+          setErrorMessage(errorMsg);
+          setShowError(true);
+        }
         
         // 3秒后隐藏错误提示
         setTimeout(() => {
