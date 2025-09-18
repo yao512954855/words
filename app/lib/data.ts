@@ -811,10 +811,10 @@ export async function fetchFilteredCustomers(
         // 已掌握：is_learned为true
         conditions.push(`uwp.is_learned = true`);
       }
-      // 如果filters.ok存在但不是'0'或'1'，则显示全部（不添加任何条件）
-    } else if (!query) {
-      // 非搜索模式下的默认学习进度限制
-      conditions.push(`(uwp.is_learned IS NULL OR uwp.is_learned = false)`);
+      // 如果filters.ok为'all'，则显示全部（不添加任何条件）
+    } else {
+      // 默认情况下（未指定ok筛选条件）显示所有单词，不添加限制
+      // 移除了之前的默认限制，解决全部和未掌握状态显示相同的问题
     }
 
     // 移除默认的学习进度限制，确保搜索时能找到所有匹配的单词
