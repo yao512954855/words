@@ -872,7 +872,7 @@ export async function fetchAllChoiceOptions() {
 
 
 // 获取用户最常出错的单词统计
-export async function fetchFrequentErrorWords() {
+export async function fetchFrequentErrorWords(sortBy: 'count' | 'latest' = 'count') {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -891,37 +891,141 @@ export async function fetchFrequentErrorWords() {
       return [];
     }
     
-    const data = await sql`
-      SELECT 
-        wwi.word_id,
-        wwi.correct_word,
-        COUNT(*) as error_count,
-        c.image_url,
-        MAX(wwi.created_at) as last_error_at
-      FROM word_wrong_inputs wwi
-      LEFT JOIN customers c ON (
-        CASE 
-          WHEN wwi.word_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
-          THEN CAST(wwi.word_id AS uuid) = c.id
-          ELSE false
-        END
-      )
-      WHERE wwi.user_id = ${userId}
-      GROUP BY wwi.word_id, wwi.correct_word, c.image_url
-      ORDER BY error_count DESC, last_error_at DESC
-      LIMIT 5
-    `;
+    // 根据排序方式构建不同的查询
+    let data;
+    if (sortBy === 'latest') {
+      data = await sql`
+        SELECT 
+          wwi.word_id,
+          wwi.correct_word,
+          COUNT(*) as error_count,
+          c.image_url,
+          MAX(wwi.created_at) as last_error_at,
+          array_agg(DISTINCT wwi.wrong_input ORDER BY wwi.wrong_input) as wrong_inputs
+        FROM word_wrong_inputs wwi
+        LEFT JOIN customers c ON (
+          CASE 
+            WHEN wwi.word_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+            THEN CAST(wwi.word_id AS uuid) = c.id
+            ELSE false
+          END
+        )
+        WHERE wwi.user_id = ${userId}
+        GROUP BY wwi.word_id, wwi.correct_word, c.image_url
+        ORDER BY last_error_at DESC, error_count DESC
+        LIMIT 6
+      `;
+    } else {
+      data = await sql`
+        SELECT 
+          wwi.word_id,
+          wwi.correct_word,
+          COUNT(*) as error_count,
+          c.image_url,
+          MAX(wwi.created_at) as last_error_at,
+          array_agg(DISTINCT wwi.wrong_input ORDER BY wwi.wrong_input) as wrong_inputs
+        FROM word_wrong_inputs wwi
+        LEFT JOIN customers c ON (
+          CASE 
+            WHEN wwi.word_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+            THEN CAST(wwi.word_id AS uuid) = c.id
+            ELSE false
+          END
+        )
+        WHERE wwi.user_id = ${userId}
+        GROUP BY wwi.word_id, wwi.correct_word, c.image_url
+        ORDER BY error_count DESC, last_error_at DESC
+        LIMIT 6
+      `;
+    }
 
     return data.map((item: any) => ({
       id: item.word_id,
       name: item.correct_word,
-      email: `错误次数: ${item.error_count}`,
+      email: `错误输入: ${item.wrong_inputs.slice(0, 3).join(', ')}${item.wrong_inputs.length > 3 ? '...' : ''}`,
       image_url: item.image_url || '/customers/default-avatar.png',
       amount: item.error_count,
+      wrong_inputs: item.wrong_inputs,
     }));
   } catch (error) {
     console.error('Database Error:', error);
     // 如果出错，返回空数组而不是抛出错误
+    return [];
+  }
+}
+
+
+
+
+// 获取用户所有错误单词的详细信息
+export async function fetchAllErrorWords(sortBy: 'count' | 'latest' = 'count') {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return [];
+    }
+
+    const userId = session.user.email;
+    
+    // 根据排序方式构建不同的查询
+    let data;
+    if (sortBy === 'latest') {
+      data = await sql`
+        SELECT 
+          wwi.word_id,
+          wwi.correct_word,
+          COUNT(*) as error_count,
+          c.image_url,
+          MAX(wwi.created_at) as last_error_at,
+          array_agg(wwi.wrong_input ORDER BY wwi.created_at DESC) as wrong_inputs,
+          array_agg(wwi.created_at ORDER BY wwi.created_at DESC) as error_times
+        FROM word_wrong_inputs wwi
+        LEFT JOIN customers c ON (
+          CASE 
+            WHEN wwi.word_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+            THEN CAST(wwi.word_id AS uuid) = c.id
+            ELSE false
+          END
+        )
+        WHERE wwi.user_id = ${userId}
+        GROUP BY wwi.word_id, wwi.correct_word, c.image_url
+        ORDER BY last_error_at DESC, error_count DESC
+      `;
+    } else {
+      data = await sql`
+        SELECT 
+          wwi.word_id,
+          wwi.correct_word,
+          COUNT(*) as error_count,
+          c.image_url,
+          MAX(wwi.created_at) as last_error_at,
+          array_agg(wwi.wrong_input ORDER BY wwi.created_at DESC) as wrong_inputs,
+          array_agg(wwi.created_at ORDER BY wwi.created_at DESC) as error_times
+        FROM word_wrong_inputs wwi
+        LEFT JOIN customers c ON (
+          CASE 
+            WHEN wwi.word_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+            THEN CAST(wwi.word_id AS uuid) = c.id
+            ELSE false
+          END
+        )
+        WHERE wwi.user_id = ${userId}
+        GROUP BY wwi.word_id, wwi.correct_word, c.image_url
+        ORDER BY error_count DESC, last_error_at DESC
+      `;
+    }
+
+    return data.map((item: any) => ({
+      id: item.word_id,
+      correct_word: item.correct_word,
+      error_count: item.error_count,
+      image_url: item.image_url || '/customers/default-avatar.png',
+      wrong_inputs: item.wrong_inputs,
+      error_times: item.error_times,
+      last_error_at: item.last_error_at,
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
     return [];
   }
 }

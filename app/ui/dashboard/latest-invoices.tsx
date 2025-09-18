@@ -1,6 +1,7 @@
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, EyeIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import Image from 'next/image';
+import Link from 'next/link';
 import { lusitana } from '@/app/ui/fonts';
 import { LatestInvoice } from '@/app/lib/definitions';
 import { fetchFrequentErrorWords } from '@/app/lib/data';
@@ -55,9 +56,18 @@ export default async function LatestInvoices() {
             );
           })}
         </div>
-        <div className="flex items-center pb-2 pt-6">
-          <ArrowPathIcon className="h-5 w-5 text-gray-500" />
-          <h3 className="ml-2 text-sm text-gray-500 ">实时统计错误单词</h3>
+        <div className="flex items-center justify-between pb-2 pt-6">
+          <div className="flex items-center">
+            <ArrowPathIcon className="h-5 w-5 text-gray-500" />
+            <h3 className="ml-2 text-sm text-gray-500 ">实时统计错误单词</h3>
+          </div>
+          <Link
+            href="/dashboard/error-words"
+            className="flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            <EyeIcon className="h-4 w-4 mr-1" />
+            查看全部
+          </Link>
         </div>
       </div>
     </div>
