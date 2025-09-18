@@ -152,7 +152,7 @@ export async function fetchCardData() {
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
     const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
-    const customerCountPromise = calculateCumulativeWords(filterState); // 使用新的累计统计
+    const totalwordsPromise = calculateCumulativeWords(filterState); // 使用新的累计统计
     const invoiceStatusPromise = sql`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
@@ -160,12 +160,12 @@ export async function fetchCardData() {
 
     const data = await Promise.all([
       invoiceCountPromise,
-      customerCountPromise,
+      totalwordsPromise,
       invoiceStatusPromise,
     ]);
 
     const numberOfInvoices = Number(data[0][0].count ?? '0');
-    const totalPaidInvoices = Number(data[1] ?? '0'); // 这里是累计单词数量
+    const totalwords = Number(data[1] ?? '0'); // 这里是累计单词数量
 
     const numberOfCustomers = formatCurrency(data[2][0].paid ?? '0');
     const totalPendingInvoices = formatCurrency(data[2][0].pending ?? '0');
@@ -173,7 +173,7 @@ export async function fetchCardData() {
     return {
       numberOfCustomers,
       numberOfInvoices,
-      totalPaidInvoices,
+      totalwords,
       totalPendingInvoices,
     };
   } catch (error) {

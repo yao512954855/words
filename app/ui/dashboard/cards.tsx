@@ -19,7 +19,7 @@ export default async function CardWrapper() {
   const {
     numberOfInvoices,
     numberOfCustomers,
-    totalPaidInvoices,
+    totalwords,
     totalPendingInvoices,
   } = await fetchCardData();
 
@@ -27,9 +27,9 @@ export default async function CardWrapper() {
     <>
       {/* NOTE: Uncomment this code in Chapter 9 */}
 
-      <Card title="totalwords" value={totalPaidInvoices} type="collected" />
-      <Card title="mastered" value={totalPendingInvoices} type="pending" />
-      <Card title="learning" value={numberOfInvoices} type="invoices" />
+      <Card title="totalwords" value={totalwords} type="collected" />
+      <Card title="termwords" value={totalPendingInvoices} type="pending" />
+      <Card title="mastered" value={numberOfInvoices} type="invoices" />
       <Card
         title="Practice count today"
         value={numberOfCustomers}
