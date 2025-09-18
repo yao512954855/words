@@ -143,6 +143,50 @@ async function calculateCumulativeWords(filterState: Record<string, string[]>): 
   }
 }
 
+// 计算当前学期单词数量
+async function calculateTermWords(filterState: Record<string, string[]>): Promise<number> {
+  try {
+    // 获取当前选择的版本、年级、学期
+    const selectedVersion = filterState.version?.[0];
+    const selectedGrade = filterState.grade?.[0];
+    const selectedClass = filterState.theclass?.[0];
+
+    if (!selectedVersion || !selectedGrade || !selectedClass) {
+      // 如果没有选择筛选条件，返回0
+      return 0;
+    }
+
+    // 构建查询条件 - 只统计当前选择的学期
+    const conditions = [];
+    const params = [];
+
+    // 版本必须匹配
+    conditions.push(`customers.version = $${params.length + 1}`);
+    params.push(selectedVersion);
+
+    // 年级必须匹配
+    conditions.push(`customers.grade = $${params.length + 1}`);
+    params.push(selectedGrade);
+
+    // 学期必须匹配
+    conditions.push(`customers.theclass = $${params.length + 1}`);
+    params.push(selectedClass);
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    const result = await sql.unsafe(`
+      SELECT COUNT(*) 
+      FROM customers 
+      ${whereClause}
+    `, params);
+
+    return Number(result[0].count ?? '0');
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
 export async function fetchCardData() {
   try {
     // 获取用户筛选状态
@@ -153,6 +197,7 @@ export async function fetchCardData() {
     // how to initialize multiple queries in parallel with JS.
     const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
     const totalwordsPromise = calculateCumulativeWords(filterState); // 使用新的累计统计
+    const termwordsPromise = calculateTermWords(filterState); // 使用新的当前学期统计
     const invoiceStatusPromise = sql`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
@@ -161,19 +206,22 @@ export async function fetchCardData() {
     const data = await Promise.all([
       invoiceCountPromise,
       totalwordsPromise,
+      termwordsPromise,
       invoiceStatusPromise,
     ]);
 
     const numberOfInvoices = Number(data[0][0].count ?? '0');
     const totalwords = Number(data[1] ?? '0'); // 这里是累计单词数量
+    const termwords = Number(data[2] ?? '0'); // 这里是当前学期单词数量
 
-    const numberOfCustomers = formatCurrency(data[2][0].paid ?? '0');
-    const totalPendingInvoices = formatCurrency(data[2][0].pending ?? '0');
+    const numberOfCustomers = formatCurrency(data[3][0].paid ?? '0');
+    const totalPendingInvoices = formatCurrency(data[3][0].pending ?? '0');
 
     return {
       numberOfCustomers,
       numberOfInvoices,
       totalwords,
+      termwords,
       totalPendingInvoices,
     };
   } catch (error) {
