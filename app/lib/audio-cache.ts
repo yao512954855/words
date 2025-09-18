@@ -47,15 +47,19 @@ class AudioCacheManager {
       this.removeOldestCache();
     }
 
-    // 创建Audio对象
-    const audio = new Audio(audioUrl);
+    // 使用流式传输端点，提高移动端兼容性
+    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}`;
     
-    // 预加载音频
-    audio.preload = 'auto';
+    // 创建Audio对象
+    const audio = new Audio(streamUrl);
+    
+    // 设置移动端友好的属性
+    audio.preload = 'metadata'; // 移动端使用metadata而不是auto
+    audio.crossOrigin = 'anonymous';
     
     // 缓存音频信息
     this.cache.set(cacheKey, {
-      url: audioUrl,
+      url: streamUrl,
       timestamp: Date.now(),
       audio: audio
     });
@@ -75,6 +79,7 @@ class AudioCacheManager {
           const data = await response.json();
           // 只有在服务器成功生成音频时才缓存
           if (data.success && data.audioUrl && !data.fallback) {
+            // 直接使用流式传输端点进行缓存
             await this.cacheAudio(word, data.audioUrl);
           } else {
             console.log('⚠️ Skipping preload for', word, '- server TTS unavailable');

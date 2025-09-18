@@ -183,6 +183,10 @@ export default function WordHint({ word, wordId }: WordHintProps) {
         // 重置音频到开始位置
         audio.currentTime = 0;
         
+        // 设置移动端友好的属性
+        audio.muted = false;
+        audio.volume = 1.0;
+        
         // 设置事件监听器
         const handleLoadStart = () => console.log('🎵 Audio loading started');
         const handleCanPlay = () => console.log('🎵 Audio can play');
@@ -218,11 +222,22 @@ export default function WordHint({ word, wordId }: WordHintProps) {
         audio.addEventListener('error', handleError);
         
         try {
-          // 开始播放音频
-          await audio.play();
-          return; // 成功播放，直接返回
-        } catch (playError) {
+          // 移动端可能需要用户交互才能播放音频
+          const playPromise = audio.play();
+          
+          if (playPromise !== undefined) {
+            await playPromise;
+            console.log('✅ Audio started playing successfully');
+            return; // 成功播放，直接返回
+          }
+        } catch (playError: any) {
           console.log('❌ Audio play failed:', playError);
+          
+          // 检查是否是移动端自动播放限制
+          if (playError.name === 'NotAllowedError') {
+            console.log('🔒 Autoplay blocked by browser, falling back to browser TTS');
+          }
+          
           // 清理事件监听器
           audio.removeEventListener('loadstart', handleLoadStart);
           audio.removeEventListener('canplay', handleCanPlay);
