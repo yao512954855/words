@@ -5,12 +5,34 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 interface WordHintProps {
   word: string;
+  wordId: string;
 }
 
-export default function WordHint({ word }: WordHintProps) {
+export default function WordHint({ word, wordId }: WordHintProps) {
   const [isVisible, setIsVisible] = useState(false);
 
+  const recordHintClick = async () => {
+    try {
+      await fetch('/api/hint-record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wordId: wordId,
+          wordText: word,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to record hint click:', error);
+    }
+  };
+
   const toggleVisibility = () => {
+    if (!isVisible) {
+      // 只在显示提示时记录点击
+      recordHintClick();
+    }
     setIsVisible(!isVisible);
   };
 

@@ -56,7 +56,7 @@ export default async function CustomersTable({
                   
                     <div className="flex flex-col items-center gap-1 width:256px height:256px text-gray-300 m-3">
                       <p>提示：字母长度{customer.name.length}</p>
-                      <WordHint word={customer.name} />
+                      <WordHint word={customer.name} wordId={customer.id} />
                     </div>
                     <div className="flex items-center gap-3 width:256px height:256px">
                       
@@ -123,7 +123,7 @@ export default async function CustomersTable({
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex flex-col items-start gap-1 width:256px height:256px text-gray-500 m-3">
                       <p>提示：字母长度{customer.name.length}</p>
-                      <WordHint word={customer.name} />
+                      <WordHint word={customer.name} wordId={customer.id} />
                     </div>
                     <div className="flex items-center gap-3 width:256px height:256px">
                       
