@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import postgres from 'postgres';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 const sql = postgres(process.env.POSTGRES_URL!);
 

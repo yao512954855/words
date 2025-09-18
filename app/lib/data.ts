@@ -1060,5 +1060,154 @@ export async function fetchAllErrorWords(
   }
 }
 
+// 获取用户最常收藏的单词统计
+export async function fetchFrequentFavoriteWords(sortBy: 'count' | 'latest' = 'count') {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return [];
+    }
+
+    const userId = session.user.email;
+    
+    // 首先检查是否有收藏数据
+    const hasData = await sql`
+      SELECT COUNT(*) as count FROM word_favorites WHERE user_id = ${userId}
+    `;
+    
+    if (Number(hasData[0].count) === 0) {
+      // 如果没有收藏数据，返回空数组
+      return [];
+    }
+    
+    // 根据排序方式构建不同的查询
+    let data;
+    if (sortBy === 'latest') {
+      data = await sql`
+        SELECT 
+          wf.word_id,
+          wf.word_text,
+          CONCAT('/wordspic/', wf.word_text, '.png') as image_url,
+          wf.created_at as favorite_at,
+          1 as favorite_count
+        FROM word_favorites wf
+        WHERE wf.user_id = ${userId}
+        ORDER BY wf.created_at DESC
+        LIMIT 6
+      `;
+    } else {
+      // 按收藏次数排序（虽然每个单词只能收藏一次，但为了保持接口一致性）
+      data = await sql`
+        SELECT 
+          wf.word_id,
+          wf.word_text,
+          CONCAT('/wordspic/', wf.word_text, '.png') as image_url,
+          wf.created_at as favorite_at,
+          1 as favorite_count
+        FROM word_favorites wf
+        WHERE wf.user_id = ${userId}
+        ORDER BY wf.created_at DESC
+        LIMIT 6
+      `;
+    }
+
+    return data.map((item: any) => ({
+      word_id: item.word_id,
+      word: item.word_text,
+      favorite_count: item.favorite_count,
+      image_url: item.image_url,
+      favorite_at: item.favorite_at,
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    return [];
+  }
+}
+
+// 获取收藏单词总数
+export async function fetchFavoriteWordsCount() {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return 0;
+    }
+
+    const userId = session.user.email;
+    
+    const result = await sql`
+      SELECT COUNT(*) as count 
+      FROM word_favorites 
+      WHERE user_id = ${userId}
+    `;
+    
+    return Number(result[0].count ?? '0');
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
+// 获取用户所有收藏单词的详细信息（支持分页）
+export async function fetchAllFavoriteWords(
+  sortBy: 'count' | 'latest' = 'latest',
+  page: number = 1,
+  itemsPerPage: number = 15
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return [];
+    }
+
+    const userId = session.user.email;
+    const offset = (page - 1) * itemsPerPage;
+    
+    // 根据排序方式构建不同的查询
+    let data;
+    if (sortBy === 'latest') {
+      data = await sql`
+        SELECT 
+          wf.word_id,
+          wf.word_text,
+          CONCAT('/wordspic/', wf.word_text, '.png') as image_url,
+          wf.created_at as favorite_at,
+          wf.updated_at,
+          1 as favorite_count
+        FROM word_favorites wf
+        WHERE wf.user_id = ${userId}
+        ORDER BY wf.created_at DESC
+        LIMIT ${itemsPerPage} OFFSET ${offset}
+      `;
+    } else {
+      // 按收藏次数排序（虽然每个单词只能收藏一次，但为了保持接口一致性）
+      data = await sql`
+        SELECT 
+          wf.word_id,
+          wf.word_text,
+          CONCAT('/wordspic/', wf.word_text, '.png') as image_url,
+          wf.created_at as favorite_at,
+          wf.updated_at,
+          1 as favorite_count
+        FROM word_favorites wf
+        WHERE wf.user_id = ${userId}
+        ORDER BY wf.created_at DESC
+        LIMIT ${itemsPerPage} OFFSET ${offset}
+      `;
+    }
+
+    return data.map((item: any) => ({
+      word_id: item.word_id,
+      word: item.word_text,
+      favorite_count: item.favorite_count,
+      image_url: item.image_url,
+      favorite_at: item.favorite_at,
+      updated_at: item.updated_at,
+    }));
+  } catch (error) {
+    console.error('Database Error:', error);
+    return [];
+  }
+}
+
 
 

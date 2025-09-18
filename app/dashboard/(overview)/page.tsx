@@ -1,6 +1,7 @@
 import { Card } from '@/app/ui/dashboard/cards';
 import RevenueChart from '@/app/ui/dashboard/revenue-chart';
 import ErrorWordsSection from '@/app/ui/dashboard/error-words-section';
+import FavoriteWordsSection from '@/app/ui/dashboard/favorite-words-section';
 import { lusitana } from '@/app/ui/fonts';
 import CardWrapper from '@/app/ui/dashboard/cards';
 // import { fetchRevenue,fetchLatestInvoices,fetchCardData } from '@/app/lib/data'; 
@@ -30,6 +31,11 @@ export default async function Page() {
         </Suspense>
         <Suspense fallback={<LatestInvoicesSkeleton />}>
             <ErrorWordsSection />
+        </Suspense>
+      </div>
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
+        <Suspense fallback={<LatestInvoicesSkeleton />}>
+            <FavoriteWordsSection />
         </Suspense>
       </div>
     </main>
