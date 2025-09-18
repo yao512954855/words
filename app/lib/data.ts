@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import postgres from 'postgres';
 import { auth } from '@/auth';
 import {
+  Customer,
   CustomerField,
   CustomersTableType,
   InvoiceForm,
@@ -805,7 +806,7 @@ export async function fetchFilteredCustomers(
     // 添加LIMIT和OFFSET参数
     params.push(String(ITEMS_PER_PAGE2), String(offset));
     
-    const customers = await sql.unsafe(`
+    const result = await sql.unsafe(`
       SELECT
         customers.id,
         customers.name,
@@ -827,6 +828,21 @@ export async function fetchFilteredCustomers(
       ORDER BY customers.orderid ASC
       LIMIT $${params.length - 1} OFFSET $${params.length}
     `, params);
+
+    // 将查询结果转换为Customer[]类型
+    const customers: Customer[] = result.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      image_url: row.image_url,
+      ok: row.ok,
+      version: row.version,
+      grade: row.grade,
+      theclass: row.theclass,
+      theunit: row.theunit,
+      studytimes: row.studytimes,
+      sorderid: row.orderid
+    }));
 
     return customers;
   } catch (error) {

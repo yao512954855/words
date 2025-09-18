@@ -1,8 +1,7 @@
 import postgres from 'postgres';
 import { lusitana } from '@/app/ui/fonts';
-import Pagination from '@/app/ui/customers/pagination';
 import Search from '@/app/ui/search';
-import Table from '@/app/ui/customers/table';
+import TableWrapper from '@/app/ui/customers/table-wrapper';
 import { fetchCustomersPages, fetchAllChoiceOptions } from '@/app/lib/data';
 import { CreateCustomers } from '@/app/ui/customers/buttons';
 import { Suspense } from 'react';
@@ -115,11 +114,8 @@ export default async function CustomersPage(props: {
       <CustomersFilters choiceOptions={choiceOptions} />
       
        <Suspense key={query + currentPage + JSON.stringify(filters)} fallback={<CustomersTableSkeleton />}>
-        <Table query={query} currentPage={currentPage} filters={filters} />
+        <TableWrapper query={query} currentPage={currentPage} filters={filters} />
       </Suspense>
-      <div className="mt-5 flex w-full justify-center">
-        <Pagination totalPages={totalPages} />
-      </div>
     </div>
   );
 }
