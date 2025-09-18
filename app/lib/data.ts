@@ -143,6 +143,69 @@ async function calculateCumulativeWords(filterState: Record<string, string[]>): 
   }
 }
 
+// 计算已掌握的单词数量
+async function calculateMasteredWords(filterState: Record<string, string[]>): Promise<number> {
+  try {
+    // 获取当前用户信息
+    const session = await auth();
+    const userId = session?.user?.email || 'anonymous';
+
+    // 获取当前选择的版本、年级、学期
+    const selectedVersion = filterState.version?.[0];
+    const selectedGrade = filterState.grade?.[0];
+    const selectedClass = filterState.theclass?.[0];
+
+    // 构建查询条件
+    const conditions = [];
+    const params = [userId]; // 第一个参数是用户ID
+
+    // 必须是已掌握的单词
+    conditions.push(`uwp.is_learned = true`);
+
+    if (selectedVersion && selectedGrade && selectedClass) {
+      // 如果有筛选条件，则按照累计逻辑统计（类似calculateCumulativeWords）
+      
+      // 版本必须匹配
+      conditions.push(`customers.version = $${params.length + 1}`);
+      params.push(selectedVersion);
+
+      // 年级范围：从1年级到当前选择的年级
+      const gradeOrder = ['k1', 'k2', 'k3', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+      const selectedGradeIndex = gradeOrder.indexOf(selectedGrade);
+      
+      if (selectedGradeIndex >= 0) {
+        const cumulativeGrades = gradeOrder.slice(0, selectedGradeIndex + 1);
+        const gradePlaceholders = cumulativeGrades.map((_, index) => `$${params.length + index + 1}`).join(',');
+        conditions.push(`customers.grade IN (${gradePlaceholders})`);
+        params.push(...cumulativeGrades);
+
+        // 学期范围：如果选择上册(1)，只统计上册；如果选择下册(2)，统计上册+下册
+        if (selectedClass === '1') {
+          conditions.push(`customers.theclass = $${params.length + 1}`);
+          params.push('1');
+        } else if (selectedClass === '2') {
+          conditions.push(`customers.theclass IN ($${params.length + 1}, $${params.length + 2})`);
+          params.push('1', '2');
+        }
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    const result = await sql.unsafe(`
+      SELECT COUNT(*) 
+      FROM customers 
+      INNER JOIN user_word_progress uwp ON customers.id = uwp.word_id AND uwp.user_id = $1
+      ${whereClause}
+    `, params);
+
+    return Number(result[0].count ?? '0');
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
 // 计算当前学期单词数量
 async function calculateTermWords(filterState: Record<string, string[]>): Promise<number> {
   try {
@@ -195,7 +258,7 @@ export async function fetchCardData() {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
-    const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
+    const totalwordsmasteredPromise = calculateMasteredWords(filterState); // 使用新的已掌握单词统计
     const totalwordsPromise = calculateCumulativeWords(filterState); // 使用新的累计统计
     const termwordsPromise = calculateTermWords(filterState); // 使用新的当前学期统计
     const invoiceStatusPromise = sql`SELECT
@@ -204,13 +267,13 @@ export async function fetchCardData() {
          FROM invoices`;
 
     const data = await Promise.all([
-      invoiceCountPromise,
+      totalwordsmasteredPromise,
       totalwordsPromise,
       termwordsPromise,
       invoiceStatusPromise,
     ]);
 
-    const numberOfInvoices = Number(data[0][0].count ?? '0');
+    const totalwordsmastered = Number(data[0] ?? '0'); // 这里是已掌握单词数量
     const totalwords = Number(data[1] ?? '0'); // 这里是累计单词数量
     const termwords = Number(data[2] ?? '0'); // 这里是当前学期单词数量
 
@@ -219,7 +282,7 @@ export async function fetchCardData() {
 
     return {
       numberOfCustomers,
-      numberOfInvoices,
+      totalwordsmastered,
       totalwords,
       termwords,
       totalPendingInvoices,
