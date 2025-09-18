@@ -957,8 +957,35 @@ export async function fetchFrequentErrorWords(sortBy: 'count' | 'latest' = 'coun
 
 
 
-// 获取用户所有错误单词的详细信息
-export async function fetchAllErrorWords(sortBy: 'count' | 'latest' = 'count') {
+// 获取用户错误单词总数
+export async function fetchErrorWordsCount() {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return 0;
+    }
+
+    const userId = session.user.email;
+    
+    const result = await sql`
+      SELECT COUNT(DISTINCT wwi.word_id) as total_count
+      FROM word_wrong_inputs wwi
+      WHERE wwi.user_id = ${userId}
+    `;
+
+    return Number(result[0]?.total_count || 0);
+  } catch (error) {
+    console.error('Database Error:', error);
+    return 0;
+  }
+}
+
+// 获取用户所有错误单词的详细信息（支持分页）
+export async function fetchAllErrorWords(
+  sortBy: 'count' | 'latest' = 'count',
+  page: number = 1,
+  itemsPerPage: number = 15
+) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -966,6 +993,7 @@ export async function fetchAllErrorWords(sortBy: 'count' | 'latest' = 'count') {
     }
 
     const userId = session.user.email;
+    const offset = (page - 1) * itemsPerPage;
     
     // 根据排序方式构建不同的查询
     let data;
@@ -990,6 +1018,7 @@ export async function fetchAllErrorWords(sortBy: 'count' | 'latest' = 'count') {
         WHERE wwi.user_id = ${userId}
         GROUP BY wwi.word_id, wwi.correct_word, c.image_url
         ORDER BY last_error_at DESC, error_count DESC
+        LIMIT ${itemsPerPage} OFFSET ${offset}
       `;
     } else {
       data = await sql`
@@ -1012,6 +1041,7 @@ export async function fetchAllErrorWords(sortBy: 'count' | 'latest' = 'count') {
         WHERE wwi.user_id = ${userId}
         GROUP BY wwi.word_id, wwi.correct_word, c.image_url
         ORDER BY error_count DESC, last_error_at DESC
+        LIMIT ${itemsPerPage} OFFSET ${offset}
       `;
     }
 

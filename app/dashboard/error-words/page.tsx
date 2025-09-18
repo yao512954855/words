@@ -2,6 +2,7 @@
 
 import { lusitana } from '@/app/ui/fonts';
 import ErrorWordsTable from '@/app/ui/error-words/error-words-table';
+import Pagination from '@/app/ui/pagination';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
@@ -17,34 +18,66 @@ interface ErrorWord {
   last_error_at: string;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export default function Page() {
   const [sortBy, setSortBy] = useState<'count' | 'latest'>('count');
   const [errorWords, setErrorWords] = useState<ErrorWord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 15,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
 
-  const fetchErrorWords = async (sortType: 'count' | 'latest') => {
+  const fetchErrorWords = async (sortType: 'count' | 'latest', page: number = 1) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/error-words-all?sortBy=${sortType}`);
+      const response = await fetch(`/api/error-words-all?sortBy=${sortType}&page=${page}&itemsPerPage=15`);
       if (!response.ok) {
         throw new Error('Failed to fetch error words');
       }
-      const data = await response.json();
-      setErrorWords(data);
+      const result = await response.json();
+      setErrorWords(result.data);
+      setPagination(result.pagination);
     } catch (error) {
       console.error('Error fetching error words:', error);
       setErrorWords([]);
+      setPagination({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 15,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchErrorWords(sortBy);
-  }, [sortBy]);
+    fetchErrorWords(sortBy, currentPage);
+  }, [sortBy, currentPage]);
 
   const handleSortChange = (newSortBy: 'count' | 'latest') => {
     setSortBy(newSortBy);
+    setCurrentPage(1); // 重置到第一页
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -89,10 +122,10 @@ export default function Page() {
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
         <div className="text-sm text-gray-600">
-          {isLoading ? '加载中...' : `共 ${errorWords.length} 个错误单词`}
-          {!isLoading && (
+          {isLoading ? '加载中...' : `共 ${pagination.totalItems} 个错误单词`}
+          {!isLoading && pagination.totalItems > 0 && (
             <span className="ml-2 text-xs text-gray-500">
-              ({sortBy === 'count' ? '按错误次数排序' : '按最新错误排序'})
+              (第 {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} - {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} 条，{sortBy === 'count' ? '按错误次数排序' : '按最新错误排序'})
             </span>
           )}
         </div>
@@ -103,7 +136,18 @@ export default function Page() {
           <span className="ml-3 text-gray-500">加载错误单词数据...</span>
         </div>
       ) : (
-        <ErrorWordsTable errorWords={errorWords} />
+        <>
+          <ErrorWordsTable errorWords={errorWords} />
+          {pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              itemsPerPage={pagination.itemsPerPage}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
       )}
     </div>
   );
