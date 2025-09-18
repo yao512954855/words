@@ -218,6 +218,24 @@ export default function TableWithReading({
                       id={customer.id}
                       placeholder="请输入单词"
                     />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">
+                        版本: {customer.version || '未知'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800">
+                        年级/学期: {customer.grade || '未知'}/{customer.theclass || '未知'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800">
+                        单元: {customer.theunit || '未知'}
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        customer.ok === '1' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {customer.ok === '1' ? '已掌握' : '学习中'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -232,6 +250,15 @@ export default function TableWithReading({
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   提示与输入
+                </th>
+                <th scope="col" className="px-3 py-5 font-medium">
+                  版本
+                </th>
+                <th scope="col" className="px-3 py-5 font-medium">
+                  年级/学期
+                </th>
+                <th scope="col" className="px-3 py-5 font-medium">
+                  单元
                 </th>
                 <th scope="col" className="px-3 py-5 font-medium">
                   状态
@@ -269,6 +296,21 @@ export default function TableWithReading({
                         placeholder="请输入单词"
                       />
                     </div>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">
+                      {customer.version || '未知'}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800">
+                      {customer.grade || '未知'}/{customer.theclass || '未知'}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800">
+                      {customer.theunit || '未知'}
+                    </span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${

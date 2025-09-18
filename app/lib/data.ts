@@ -669,8 +669,12 @@ export async function fetchCustomersPages(
     const params = [userId]; // 第一个参数是用户ID
 
     if (query) {
-      conditions.push(`(customers.name ILIKE $${params.length + 1} OR customers.email ILIKE $${params.length + 2})`);
-      params.push(`%${query}%`, `%${query}%`);
+      conditions.push(`(
+        customers.name ILIKE $${params.length + 1} OR 
+        customers.email ILIKE $${params.length + 2} OR
+        customers.chinese_translation ILIKE $${params.length + 3}
+      )`);
+      params.push(`%${query}%`, `%${query}%`, `%${query}%`);
     }
 
     if (filters?.version) {
@@ -768,8 +772,16 @@ export async function fetchFilteredCustomers(
     const params = [userId]; // 第一个参数是用户ID
 
     if (query) {
-      conditions.push(`(customers.name ILIKE $${params.length + 1} OR customers.email ILIKE $${params.length + 2})`);
-      params.push(`%${query}%`, `%${query}%`);
+      conditions.push(`(
+        customers.name ILIKE $${params.length + 1} OR 
+        customers.email ILIKE $${params.length + 2} OR
+        EXISTS (
+          SELECT 1 FROM word_translations 
+          WHERE LOWER(word_translations.word_text) = LOWER(customers.name) 
+          AND word_translations.chinese_translation ILIKE $${params.length + 3}
+        )
+      )`);
+      params.push(`%${query}%`, `%${query}%`, `%${query}%`);
     }
 
     if (filters?.version) {
