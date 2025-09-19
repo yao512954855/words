@@ -84,16 +84,16 @@ export default function SearchPage() {
         <h1 className={`${lusitana.className} text-2xl`}>单词搜索</h1>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
+      <div className="mt-4 flex flex-col items-center gap-2 md:mt-8">
         {/* 搜索框 */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative w-full md:w-2/3 lg:w-1/2 mx-auto">
           <label htmlFor="search" className="sr-only">
             搜索单词
           </label>
           <input
             type="text"
             id="search"
-            className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+            className="peer block w-full rounded-md border border-gray-200 py-3 pl-10 text-sm outline-2 placeholder:text-gray-500 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             placeholder="搜索单词..."
             defaultValue={query}
             onChange={(e) => {
@@ -104,7 +104,7 @@ export default function SearchPage() {
         </div>
         
         {!loading && query && (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 mt-2">
             找到 {customers.length} 个单词
           </div>
         )}
