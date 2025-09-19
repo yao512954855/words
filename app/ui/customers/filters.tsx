@@ -19,6 +19,7 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   const { replace } = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(true); // 手机端折叠状态
   const [isMobile, setIsMobile] = useState(false);
+  const [filteredUnitOptions, setFilteredUnitOptions] = useState<ChoiceOption[]>(choiceOptions.theunit || []);
   
   // 检测是否为移动设备
   useEffect(() => {
@@ -40,6 +41,46 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
   const currentClass = searchParams.get('theclass') || 'all';
   const currentUnit = searchParams.get('theunit') || 'all';
   const currentOk = searchParams.get('ok') || 'all';
+  
+  // 获取可用单元
+  const fetchAvailableUnits = async (version: string, grade: string, theclass: string) => {
+    if (version === 'all' || grade === 'all' || theclass === 'all') {
+      // 如果任何一个条件是"全部"，则不需要获取特定单元
+      setFilteredUnitOptions(choiceOptions.theunit || []);
+      return;
+    }
+
+    try {
+      // 从API获取实际存在的单元
+      const response = await fetch(`/api/available-units?version=${version}&grade=${grade}&theclass=${theclass}`);
+      if (response.ok) {
+        const units = await response.json();
+        
+        // 根据可用单元过滤选项
+        const filtered = choiceOptions.theunit?.filter(option => 
+          units.includes(option.value) || option.value === 'all'
+        ) || [];
+        
+        setFilteredUnitOptions(filtered);
+        
+        // 如果当前选择的单元不在可用单元中，重置为"全部"
+        if (currentUnit !== 'all' && !units.includes(currentUnit)) {
+          handleFilterChange('theunit', 'all');
+        }
+      } else {
+        console.error('获取可用单元失败');
+        setFilteredUnitOptions(choiceOptions.theunit || []);
+      }
+    } catch (error) {
+      console.error('获取可用单元出错:', error);
+      setFilteredUnitOptions(choiceOptions.theunit || []);
+    }
+  };
+  
+  // 当版本、年级或学期改变时，获取可用单元
+  useEffect(() => {
+    fetchAvailableUnits(currentVersion, currentGrade, currentClass);
+  }, [currentVersion, currentGrade, currentClass]);
 
   // 保存筛选状态到数据库
   const saveFilterState = async (updatedParams: URLSearchParams) => {
@@ -187,7 +228,7 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
                 className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">全部单元</option>
-                {choiceOptions.theunit?.map((option) => (
+                {filteredUnitOptions.map((option) => (
                   <option key={option.id} value={option.value}>
                     {option.label}
                   </option>
@@ -312,7 +353,7 @@ export default function CustomersFilters({ choiceOptions }: CustomersFiltersProp
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">全部单元</option>
-            {choiceOptions.theunit?.map((option) => (
+            {filteredUnitOptions.map((option) => (
               <option key={option.id} value={option.value}>
                 {option.label}
               </option>
