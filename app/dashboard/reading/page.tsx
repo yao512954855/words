@@ -1,10 +1,15 @@
 import { Suspense } from 'react';
 import { BookOpenIcon } from '@heroicons/react/24/outline';
+import DynamicReadingFilters from '@/app/ui/reading/dynamic-filters';
 
-export default function Page() {
+export default async function Page() {
   return (
     <main className="flex flex-col items-center p-4 md:p-6">
       <h1 className="mb-4 text-xl md:text-2xl">阅读练习</h1>
+      
+      <div className="w-full max-w-4xl">
+        <DynamicReadingFilters />
+      </div>
       
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex items-center justify-between mb-4">

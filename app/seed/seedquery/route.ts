@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import postgres from 'postgres';
-import { customers } from '../lib/placeholder-data';
+import { customers } from '../../lib/placeholder-data';
 import { NextResponse } from 'next/server';
 
 const sql = postgres(process.env.POSTGRES_URL!);
