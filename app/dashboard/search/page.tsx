@@ -32,6 +32,25 @@ export default function SearchPage() {
     currentPage * itemsPerPage
   );
 
+  // 记录搜索输入
+  const recordSearch = async (term: string, isPartial: boolean, resultCount: number) => {
+    try {
+      await fetch('/api/search-record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchTerm: term,
+          isPartial,
+          resultCount,
+        }),
+      });
+    } catch (error) {
+      console.error('Error recording search:', error);
+    }
+  };
+
   // 搜索功能
   const handleSearch = (term: string) => {
     const params = new URLSearchParams(searchParams);
@@ -68,6 +87,9 @@ export default function SearchPage() {
         const data = await response.json();
         console.log('搜索结果:', data); // 调试用，查看返回的数据结构
         setCustomers(data);
+        
+        // 记录搜索输入，包括部分输入的情况
+        recordSearch(query, query.length < 3, data.length);
       } catch (error) {
         console.error('Error fetching search results:', error);
       } finally {
