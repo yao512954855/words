@@ -8,9 +8,11 @@ import { audioCache } from '@/app/lib/audio-cache';
 interface WordHintProps {
   word: string;
   wordId: string;
+  showWord?: boolean;
 }
 
-export default function WordHint({ word, wordId }: WordHintProps) {
+export default function WordHint({ word, wordId, showWord = true }: WordHintProps) {
+  // 提示功能完全独立于showWord属性，不受显示/隐藏英文单词的影响
   const [isVisible, setIsVisible] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
@@ -403,6 +405,7 @@ export default function WordHint({ word, wordId }: WordHintProps) {
         </button>
       )}
       
+      {/* 提示内容完全独立于单词显示状态 */}
       {isVisible && (
         <span className="text-sm font-medium text-blue-600">
           {word}

@@ -44,6 +44,7 @@ export default function TableWithReading({
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [isReadingCollapsed, setIsReadingCollapsed] = useState(true); // 连续朗读模块折叠状态
   const [isMobile, setIsMobile] = useState(false); // 是否为移动设备
+  const [showEnglishWords, setShowEnglishWords] = useState(true); // 控制英文单词显示
   
   // 客户端分页状态
   const [clientCurrentPage, setClientCurrentPage] = useState(currentPage);
@@ -179,6 +180,31 @@ export default function TableWithReading({
         </div>
       </div>
       
+      {/* 显示/隐藏英文单词按钮 - 仅在PC端显示 */}
+      <div className="mb-4 hidden md:block">
+        <button
+          onClick={() => setShowEnglishWords(!showEnglishWords)}
+          className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+        >
+          {showEnglishWords ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+              <span>隐藏英文单词</span>
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>显示英文单词</span>
+            </>
+          )}
+        </button>
+      </div>
+      
       {isLoadingAll && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-center gap-2">
@@ -191,6 +217,31 @@ export default function TableWithReading({
       {/* 单词表格 */}
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
+          {/* 手机端显示/隐藏英文单词按钮 */}
+          <div className="md:hidden mb-4">
+            <button
+              onClick={() => setShowEnglishWords(!showEnglishWords)}
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+            >
+              {showEnglishWords ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                  <span>隐藏英文单词</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>显示英文单词</span>
+                </>
+              )}
+            </button>
+          </div>
+          
           <div className="md:hidden">
             {currentPageCustomers?.map((customer, index) => (
               <div
@@ -213,12 +264,18 @@ export default function TableWithReading({
                         priority={index === 0}
                       />
                     </div>
+                    {/* 将单词显示放在图片下面 */}
+                    {showEnglishWords && (
+                      <div className="mt-2 mb-2 text-center font-medium text-blue-600">
+                        {customer.name}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex w-full items-center justify-between pt-4">
                   <div className="w-full">
                     <div className="mb-2">
-                      <WordHint word={customer.name} wordId={customer.id} />
+                      <WordHint word={customer.name} wordId={customer.id} showWord={true} />
                     </div>
                     <LetterBoxInput 
                       word={customer.name} 
@@ -287,16 +344,16 @@ export default function TableWithReading({
                       <Image
                         src={customer.image_url}
                         className="rounded-md"
-                        width={28}
-                        height={28}
+                        width={256}
+                        height={256}
                         alt={`${customer.name}'s profile picture`}
                       />
-                      <p className="font-medium">{customer.name}</p>
+                      {showEnglishWords && <p className="font-medium">{customer.name}</p>}
                     </div>
                   </td>
                   <td className="px-3 py-3">
                     <div className="space-y-2">
-                      <WordHint word={customer.name} wordId={customer.id} />
+                      <WordHint word={customer.name} wordId={customer.id} showWord={showEnglishWords} />
                       <LetterBoxInput 
                         word={customer.name} 
                         id={customer.id}
