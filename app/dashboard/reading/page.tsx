@@ -124,31 +124,52 @@ export default function Page() {
           {article.english ? (
             <>
               <div className="mb-6">
-                {article.english.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4">
-                    {paragraph.split(' ').map((word, wordIndex) => {
-                      const foundWord = article.words.find(w => 
-                        w.word.toLowerCase() === word.replace(/[.,!?;:'"()]/g, '').toLowerCase()
-                      );
-                      return foundWord ? (
-                        <span key={wordIndex} className="relative group">
-                          <span className="font-medium">{word} </span>
-                          <span className="absolute bottom-full left-0 bg-gray-800 text-white text-xs rounded p-1 hidden group-hover:block">
-                            {foundWord.phonetic} 
-                          </span>
-                        </span>
-                      ) : (
-                        <span key={wordIndex}>{word} </span>
-                      );
-                    })}
-                  </p>
-                ))}
-              </div>
-              <div className="border-t pt-4 mt-4">
-                <h4 className="text-lg font-medium mb-2">中文翻译</h4>
-                {article.chinese.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4 text-gray-700">{paragraph}</p>
-                ))}
+                {article.english.split('\n').map((paragraph, index) => {
+                  // 获取对应的中文段落
+                  const chineseParagraphs = article.chinese.split('\n');
+                  const chineseParagraph = chineseParagraphs[index] || '';
+                  
+                  // 检查是否为标题（第一段）
+                  if (index === 0 && paragraph.includes("A Day at the Animal Shelter")) {
+                    // 去除标题中的星号(**)
+                    const cleanTitle = paragraph.replace(/\*\*/g, '');
+                    return (
+                      <div key={index} className="mb-6">
+                        <h1 className="text-2xl font-bold text-center mb-2">
+                          {cleanTitle}
+                        </h1>
+                        {chineseParagraph && (
+                          <p className="text-center text-gray-600 mb-4">{chineseParagraph}</p>
+                        )}
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div key={index} className="mb-6">
+                      <p className="mb-2">
+                        {paragraph.split(' ').map((word, wordIndex) => {
+                          const foundWord = article.words.find(w => 
+                            w.word.toLowerCase() === word.replace(/[.,!?;:'"()]/g, '').toLowerCase()
+                          );
+                          return foundWord ? (
+                            <span key={wordIndex} className="relative group">
+                              <span className="font-medium">{word} </span>
+                              <span className="absolute bottom-full left-0 bg-gray-800 text-white text-xs rounded p-1 hidden group-hover:block">
+                                {foundWord.phonetic} 
+                              </span>
+                            </span>
+                          ) : (
+                            <span key={wordIndex}>{word} </span>
+                          );
+                        })}
+                      </p>
+                      {chineseParagraph && (
+                        <p className="text-gray-600 text-sm pl-4 border-l-2 border-gray-300 mb-2">{chineseParagraph}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </>
           ) : (
