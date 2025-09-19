@@ -3,7 +3,6 @@
 import { lusitana } from '@/app/ui/fonts';
 import HintWordsTable from '@/app/ui/hint-words/hint-words-table';
 import Pagination from '@/app/ui/pagination';
-import Search from '@/app/ui/search';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
@@ -100,7 +99,7 @@ export default function Page() {
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
-        <Search placeholder="搜索提示单词..." />
+        <div></div>
         
         {!isLoading && (
           <div className="text-sm text-gray-600">

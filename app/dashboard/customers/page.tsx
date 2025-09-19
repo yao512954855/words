@@ -1,6 +1,5 @@
 import postgres from 'postgres';
 import { lusitana } from '@/app/ui/fonts';
-import Search from '@/app/ui/search';
 import TableWrapper from '@/app/ui/customers/table-wrapper';
 import { fetchCustomersPages, fetchAllChoiceOptions } from '@/app/lib/data';
 import { CreateCustomers } from '@/app/ui/customers/buttons';

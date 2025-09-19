@@ -2,14 +2,13 @@
 
 import { lusitana } from '@/app/ui/fonts';
 import Pagination from '@/app/ui/pagination';
-import Search from '@/app/ui/search';
 import { useState, useEffect } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import WordHint from '@/app/ui/customers/word-hint';
+import WordHint from '@/app/ui/search/word-hint';
 import LetterBoxInput from '@/app/ui/customers/letter-box-input';
 import { Customer } from '@/app/lib/definitions';
-import { CustomerField } from '@/app/lib/definitions';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -18,15 +17,8 @@ export default function SearchPage() {
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
-  // 移除了显示英文单词的状态
-  
   const query = searchParams.get('query') || '';
   const currentPage = Number(searchParams.get('page') || 1);
-  const version = searchParams.get('version') || 'all';
-  const grade = searchParams.get('grade') || 'all';
-  const theclass = searchParams.get('theclass') || 'all';
-  const theunit = searchParams.get('theunit') || 'all';
-  const ok = searchParams.get('ok') || 'all';
   
   // 每页显示的数量
   const itemsPerPage = 10;
@@ -40,6 +32,20 @@ export default function SearchPage() {
     currentPage * itemsPerPage
   );
 
+  // 搜索功能
+  const handleSearch = (term: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', '1');
+    
+    if (term) {
+      params.set('query', term);
+    } else {
+      params.delete('query');
+    }
+    
+    replace(`${pathname}?${params.toString()}`);
+  };
+
   useEffect(() => {
     async function fetchData() {
       if (!query) {
@@ -52,7 +58,7 @@ export default function SearchPage() {
         const params = new URLSearchParams();
         if (query) params.append('query', query);
         
-        // 发送请求获取真实数据，只使用query参数
+        // 发送请求获取搜索结果
         const response = await fetch(`/api/customers/search?${params.toString()}`);
         if (!response.ok) {
           console.error('Search API error:', response.status, response.statusText);
@@ -79,7 +85,23 @@ export default function SearchPage() {
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
-        <Search placeholder="搜索单词..." />
+        {/* 搜索框 */}
+        <div className="relative flex-1 max-w-md">
+          <label htmlFor="search" className="sr-only">
+            搜索单词
+          </label>
+          <input
+            type="text"
+            id="search"
+            className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+            placeholder="搜索单词..."
+            defaultValue={query}
+            onChange={(e) => {
+              handleSearch(e.target.value);
+            }}
+          />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+        </div>
         
         {!loading && query && (
           <div className="text-sm text-gray-600">
@@ -88,7 +110,7 @@ export default function SearchPage() {
         )}
       </div>
       
-      {/* 移除了显示/隐藏英文单词按钮 */}
+
 
       {loading && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -99,125 +121,100 @@ export default function SearchPage() {
         </div>
       )}
 
-      {!loading && query && customers.length === 0 && (
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">没有找到匹配的单词</p>
-        </div>
-      )}
-
-      {!loading && customers.length > 0 && (
+      {/* 搜索结果展示 */}
+      {!loading && query && customers.length > 0 && (
         <div className="mt-6 flow-root">
-          <div className="inline-block min-w-full align-middle">
-            <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
-              {/* 移动端显示 */}
-              <div className="md:hidden">
-                {currentPageCustomers.map((customer) => (
-                  <div
-                    key={customer.id}
-                    className="mb-2 w-full rounded-md bg-white p-4"
-                  >
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div>
-                        <div className="mb-2 flex items-center">
-                          <Image
-                            src={customer.image_url || `/wordspic/${customer.name}.png`}
-                            className="mr-2 rounded-md"
-                            width={256}
-                            height={256}
-                            alt={`${customer.name}'s profile picture`}
-                          />
-                        </div>
-                        {/* 将单词显示放在图片下面 */}
-                        <div className="mt-2 mb-2 text-center">
-                          <div className="font-medium text-blue-600">{customer.name}</div>
-                          <div className="text-sm text-gray-500">{customer.chinese_translation}</div>
-                          <div className="text-xs text-gray-400">{customer.version} {customer.grade} {customer.theclass} {customer.theunit}</div>
-                        </div>
-                      </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {currentPageCustomers.map((customer) => (
+              <div
+                key={customer.id}
+                className="col-span-1 rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md p-4"
+              >
+                <div className="flex items-center justify-between border-b pb-4">
+                  <div className="w-full">
+                    <div className="mb-2 flex items-center justify-center">
+                      <Image
+                        src={customer.image_url}
+                        className="rounded-md"
+                        width={256}
+                        height={256}
+                        alt={`${customer.name}'s profile picture`}
+                      />
                     </div>
-                    <div className="flex w-full items-center justify-between pt-4">
-                      <div className="w-full">
-                        <div className="mb-2">
-                          <WordHint word={customer.name} wordId={customer.id} showWord={true} />
-                        </div>
-                        <LetterBoxInput 
-                          word={customer.name} 
-                          id={customer.id}
-                          placeholder="请输入单词"
-                        />
-                      </div>
+                    <div className="mt-2 mb-2 text-center font-medium text-blue-600">
+                      {customer.name}
                     </div>
                   </div>
-                ))}
+                </div>
+                <div className="flex w-full items-center justify-between pt-4">
+                  <div className="w-full">
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                       <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-pink-100 text-blue-800">
+                        翻译: {customer.chinese_translation || '未知'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">
+                        版本: {customer.version || '未知'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800">
+                        年级/学期: {customer.grade || '未知'}/{customer.theclass || '未知'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800">
+                        单元: {customer.theunit || '未知'}
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        customer.ok === '1' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        掌握: {customer.ok === '1' ? '是' : '否'}
+                      </span>
+                    </div>
+                    <div className="mb-2">
+                      <WordHint word={customer.name} wordId={customer.id} showWord={true} />
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              {/* PC端显示 */}
-              <table className="hidden min-w-full text-gray-900 md:table">
-                <thead className="rounded-lg text-left text-sm font-normal">
-                  <tr>
-                    <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
-                      单词
-                    </th>
-                    <th scope="col" className="px-3 py-5 font-medium">
-                      输入
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white">
-                  {currentPageCustomers.map((customer, index) => (
-                    <tr
-                      key={customer.id}
-                      className="w-full border-b py-3 text-lg last-of-type:border-none [&:first-child>td:first-child]:rounded-tl-lg [&:first-child>td:last-child]:rounded-tr-lg [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg"
-                    >
-                      <td className="whitespace-nowrap py-3 pl-6 pr-3">
-                        <div className="flex items-center gap-3">
-                          <Image
-                            src={customer.image_url || `/wordspic/${customer.name}.png`}
-                            className="rounded-md"
-                            width={256}
-                            height={256}
-                            alt={`${customer.name}'s profile picture`}
-                            priority={index === 0}
-                          />
-                          <div>
-                            <p className="font-medium">{customer.name}</p>
-                            <p className="text-sm text-gray-500">{customer.chinese_translation}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="whitespace-nowrap py-3 pl-6 pr-3">
-                        <div className="flex flex-col items-start gap-1 width:256px height:256px text-gray-500 m-3">
-                          <p>提示：字母长度{customer.name.length}</p>
-                          <WordHint word={customer.name} wordId={customer.id} />
-                        </div>
-                        <div className="flex items-center gap-3 width:256px height:256px">
-                          <LetterBoxInput id={customer.id} word={customer.name} placeholder="请输入单词" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            ))}
           </div>
+          
+          {/* 分页控件 */}
+          {totalPages > 1 && (
+            <div className="mt-5 flex w-full justify-center">
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={customers.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={(page) => {
+                  const params = new URLSearchParams(searchParams);
+                  params.set('page', page.toString());
+                  replace(`${pathname}?${params.toString()}`);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* 分页控件 */}
-      {totalPages > 1 && (
-        <div className="mt-5 flex w-full justify-center">
-          <Pagination 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={customers.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={(page) => {
-              const params = new URLSearchParams(searchParams.toString());
-              params.set('page', page.toString());
-              replace(`${pathname}?${params.toString()}`);
-            }}
-          />
+      {!loading && query && customers.length === 0 && (
+        <div className="mt-6 text-center">
+          <div className="rounded-md bg-yellow-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">未找到匹配的单词</h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>请尝试使用不同的搜索词或检查拼写。</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
