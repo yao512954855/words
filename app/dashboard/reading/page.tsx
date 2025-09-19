@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { BookOpenIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 import DynamicReadingFilters from '@/app/ui/reading/dynamic-filters';
 import FilteredWordsList from '@/app/ui/reading/filtered-words-list';
 
@@ -14,8 +14,8 @@ export default async function Page() {
       
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">今日推荐阅读</h2>
-          <BookOpenIcon className="w-6 h-6 text-blue-500" />
+          <h2 className="text-lg font-medium">AI生成阅读</h2>
+          <SparklesIcon className="w-6 h-6 text-blue-500" />
         </div>
         
         <div className="prose max-w-none">
@@ -31,27 +31,11 @@ export default async function Page() {
           </p>
         </div>
         
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <h4 className="font-medium mb-2">生词表</h4>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <li className="flex items-center">
-              <span className="font-medium mr-2">importance</span>
-              <span className="text-gray-600">重要性</span>
-            </li>
-            <li className="flex items-center">
-              <span className="font-medium mr-2">develop</span>
-              <span className="text-gray-600">发展</span>
-            </li>
-            <li className="flex items-center">
-              <span className="font-medium mr-2">perspective</span>
-              <span className="text-gray-600">观点</span>
-            </li>
-            <li className="flex items-center">
-              <span className="font-medium mr-2">enhance</span>
-              <span className="text-gray-600">提高</span>
-            </li>
-          </ul>
-        </div>
+        {/* <div className="mt-6 pt-4 border-t border-gray-200">
+          <h4 className="font-medium mb-2">中文翻译</h4>
+          <p>阅读是一个人能够培养的最重要的技能之一。它为新的世界、思想和视角打开了大门。通过阅读，我们可以去往遥远的地方，了解不同的文化，并拓展我们在无数领域的知识。</p>
+          <p>定期阅读能扩大词汇量、提高理解力并增强批判性思维能力。它还有助于减轻压力，并提供一种在任何地方都能享受的娱乐方式。</p>
+        </div> */}
       </div>
       
       {/* 筛选结果显示 */}

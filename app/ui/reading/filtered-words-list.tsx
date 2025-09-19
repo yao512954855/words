@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import { Customer } from '@/app/lib/definitions';
 
 export default function FilteredWordsList() {
@@ -86,20 +85,18 @@ export default function FilteredWordsList() {
 
   return (
     <div className="mt-4 w-full max-w-4xl bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-lg font-medium mb-4">筛选结果</h2>
+      <h2 className="text-lg font-medium mb-4">涉及单词</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {words.map((word) => (
           <div key={word.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex flex-col items-center">
-              <Image
-                src={word.image_url}
-                alt={word.name}
-                width={100}
-                height={100}
-                className="mb-2 rounded-md"
-              />
-              <h3 className="font-medium text-center">{word.name}</h3>
-              <div className="mt-2 flex flex-wrap gap-1 justify-center">
+            <div className="flex flex-col">
+              <h3 className="font-medium text-lg">{word.name}</h3>
+              {word.chinese_translation && (
+                <div className="mt-1">
+                  <p className="text-gray-700">{word.chinese_translation || ''}</p>
+                </div>
+              )}
+              <div className="mt-2 flex flex-wrap gap-1">
                 <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">
                   {word.version}
                 </span>
