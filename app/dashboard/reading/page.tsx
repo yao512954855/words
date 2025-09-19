@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { BookOpenIcon } from '@heroicons/react/24/outline';
 import DynamicReadingFilters from '@/app/ui/reading/dynamic-filters';
+import FilteredWordsList from '@/app/ui/reading/filtered-words-list';
 
 export default async function Page() {
   return (
@@ -53,25 +54,8 @@ export default async function Page() {
         </div>
       </div>
       
-      <div className="w-full max-w-4xl">
-        <h2 className="text-lg font-medium mb-4">阅读列表</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
-              <h3 className="font-medium">阅读文章 {item}</h3>
-              <p className="text-gray-600 text-sm mt-1">
-                这是一篇简短的阅读文章，包含了常用词汇和语法结构...
-              </p>
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-xs text-gray-500">难度: {item} / 5</span>
-                <button className="text-blue-600 text-sm hover:text-blue-800">
-                  开始阅读
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 筛选结果显示 */}
+      <FilteredWordsList />
     </main>
   );
 }

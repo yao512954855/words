@@ -22,6 +22,7 @@ export default function DynamicReadingFilters() {
   const currentClass = searchParams.get('theclass') || 'all';
   const currentUnit = searchParams.get('theunit') || 'all';
   const currentOk = searchParams.get('ok') || 'all';
+  const currentLimit = searchParams.get('limit') || '10';
 
   // 检测是否为移动设备
   useEffect(() => {
@@ -72,11 +73,14 @@ export default function DynamicReadingFilters() {
       // 从API获取实际存在的单元
       const response = await fetch(`/api/reading-available-units?version=${version}&grade=${grade}&theclass=${theclass}`);
       if (response.ok) {
-        const units = await response.json();
+        const data = await response.json();
+        // 确保 units 是数组
+        const units = Array.isArray(data) ? data : 
+                     (data.customers ? data.customers.map((item: { theunit: string }) => item.theunit) : []);
         
         // 根据可用单元过滤选项
         const filtered = choiceOptions.theunit?.filter(option => 
-          units.includes(option.value) || option.value === 'all'
+          option.value === 'all' || units.includes(option.value)
         ) || [];
         
         setFilteredUnitOptions(filtered);
@@ -193,7 +197,7 @@ export default function DynamicReadingFilters() {
       
       {/* 筛选表单 - 桌面端 */}
       {(!isMobile || !isCollapsed) && (
-        <div className={isMobile ? "space-y-4" : "grid grid-cols-5 gap-4"}>
+        <div className={isMobile ? "space-y-4" : "grid grid-cols-6 gap-4"}>
           {/* 版本筛选 */}
           <div>
             <label htmlFor="version" className="block text-sm font-medium text-gray-700 mb-1">
@@ -291,6 +295,25 @@ export default function DynamicReadingFilters() {
                   {option.label}
                 </option>
               ))}
+            </select>
+          </div>
+          
+          {/* 单词数量筛选 */}
+          <div>
+            <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-1">
+              单词数量
+            </label>
+            <select
+              id="limit"
+              value={currentLimit}
+              onChange={(e) => handleFilterChange('limit', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="10">10个</option>
+              <option value="15">15个</option>
+              <option value="20">20个</option>
+              <option value="25">25个</option>
+              <option value="30">30个</option>
             </select>
           </div>
         </div>
