@@ -275,6 +275,7 @@ export default function TableWithReading({
                 <div className="flex w-full items-center justify-between pt-4">
                   <div className="w-full">
                     <div className="mb-2">
+                      <p className="font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-md border border-gray-300 mb-2">提示：字母长度{customer.name.length}</p>
                       <WordHint word={customer.name} wordId={customer.id} showWord={true} />
                     </div>
                     <LetterBoxInput 

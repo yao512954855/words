@@ -861,7 +861,8 @@ export async function fetchFilteredCustomers(
       theclass: row.theclass,
       theunit: row.theunit,
       studytimes: row.studytimes,
-      sorderid: row.orderid
+      sorderid: row.orderid,
+      chinese_translation: row.chinese_translation,
     }));
 
     return customers;

@@ -55,7 +55,7 @@ export default async function CustomersTable({
                 </div>
                 <div className="flex flex-col w-full items-center justify-between pt-4">
                   
-                    <div className="flex flex-col items-center gap-1 width:256px height:256px text-gray-300 m-3">
+                    <div className="flex flex-col items-center gap-1 width:256px height:256px text-gray-700 m-3">
                       <p>提示：字母长度{customer.name.length}</p>
                       <WordHint word={customer.name} wordId={customer.id} />
                     </div>

@@ -21,6 +21,7 @@ export type Customer = {
   theunit: string; // 课程单元如5
   studytimes: string; // 系统当前时间
   sorderid: string; // 单词的排序，如3
+  chinese_translation: string; // 中文翻译
 };
 
 export type Invoice = {

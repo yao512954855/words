@@ -332,12 +332,14 @@ export default function WordHint({ word, wordId, showWord = true }: WordHintProp
   };
 
   return (
-    <div className="flex items-center gap-2 text-gray-500 mt-1">
-      <button
-        onClick={toggleVisibility}
-        className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
-        type="button"
-      >
+    <>
+      <p className="text-gray-500 mb-1">提示：字母长度{word.length}</p>
+      <div className="flex items-center gap-2 text-gray-500 mt-1">
+        <button
+          onClick={toggleVisibility}
+          className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
+          type="button"
+        >
         {isVisible ? (
           <>
             <EyeSlashIcon className="w-3 h-3" />
@@ -418,5 +420,7 @@ export default function WordHint({ word, wordId, showWord = true }: WordHintProp
         </span>
       )}
     </div>
+     </>
   );
+ 
 }
