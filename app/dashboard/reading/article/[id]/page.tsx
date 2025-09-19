@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -13,11 +14,20 @@ interface ArticleData {
     word: string;
     translation: string;
     phonetic?: string;
+    version?: string;
+    grade?: string;
+    theclass?: string;
+    theunit?: string;
   }[];
   created_at: string;
 }
 
-export default function ArticlePage({ params }: { params: { id: string } }) {
+// 正确定义params类型为Promise<{id: string}>
+export default function ArticlePage({ params }: { params: Promise<{id: string}> }) {
+  // 使用use函数解包Promise
+  const resolvedParams = use(params);
+  const articleId = resolvedParams.id;
+  
   const [article, setArticle] = useState<ArticleData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +35,7 @@ export default function ArticlePage({ params }: { params: { id: string } }) {
   useEffect(() => {
     async function fetchArticle() {
       try {
-        const response = await fetch(`/api/article/${params.id}`);
+        const response = await fetch(`/api/article/${articleId}`);
         if (!response.ok) {
           throw new Error('文章获取失败');
         }
@@ -39,10 +49,10 @@ export default function ArticlePage({ params }: { params: { id: string } }) {
       }
     }
 
-    if (params.id) {
+    if (articleId) {
       fetchArticle();
     }
-  }, [params.id]);
+  }, [articleId]);
 
   // 处理英文和中文段落的渲染
   const renderContent = () => {
@@ -86,6 +96,8 @@ export default function ArticlePage({ params }: { params: { id: string } }) {
             <div className="font-medium">{word.word}</div>
             {word.phonetic && <div className="text-sm text-gray-500">{word.phonetic}</div>}
             <div className="text-sm">{word.translation}</div>
+            {word.version && <div className="text-xs text-gray-400">版本: {word.version}</div>}
+            {word.grade && <div className="text-xs text-gray-400">年级: {word.grade}</div>}
           </div>
         ))}
       </div>

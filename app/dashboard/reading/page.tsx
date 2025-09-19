@@ -8,6 +8,7 @@ import GenerateArticleDialog from '@/app/ui/reading/generate-article-dialog';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { generateArticle } from '@/app/lib/article-generator';
+import { getLatestUserArticle } from '@/app/lib/articles';
 
 export default function Page() {
   const searchParams = useSearchParams();
@@ -20,6 +21,35 @@ export default function Page() {
   });
   const [filteredWords, setFilteredWords] = useState<string[]>([]);
   
+  // 初始化时获取用户最新文章
+  useEffect(() => {
+    const fetchLatestArticle = async () => {
+      try {
+        // 获取当前用户的最新文章
+        const response = await fetch('/api/my-articles?latest=true');
+        if (response.ok) {
+          const latestArticle = await response.json();
+          if (latestArticle && latestArticle.english_content) {
+            setArticle({
+              english: latestArticle.english_content,
+              chinese: latestArticle.chinese_content,
+              words: latestArticle.words || []
+            });
+          }
+        } else if (response.status === 401) {
+          // 用户未登录，不做处理，使用默认文章
+          console.log('用户未登录，使用默认文章');
+        } else {
+          console.error('获取最新文章失败:', await response.text());
+        }
+      } catch (error) {
+        console.error('获取最新文章失败:', error);
+      }
+    };
+    
+    fetchLatestArticle();
+  }, []);
+
   // 从URL获取当前筛选条件下的单词
   useEffect(() => {
     const fetchFilteredWords = async () => {

@@ -83,6 +83,52 @@ export async function saveArticle(article: {
   }
 }
 
+// 获取用户最新的一篇文章
+export async function getLatestUserArticle(userId: string) {
+  try {
+    const articles = await sql`
+      SELECT 
+        id, 
+        title, 
+        english_content,
+        chinese_content,
+        style, 
+        difficulty, 
+        version,
+        grade,
+        theclass,
+        theunit,
+        created_at
+      FROM articles
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    
+    if (articles.length === 0) {
+      return null;
+    }
+    
+    const article = articles[0];
+    
+    // 获取文章关联的单词
+    const words = await sql`
+      SELECT word, phonetic
+      FROM article_words
+      WHERE article_id = ${article.id}
+      ORDER BY id
+    `;
+    
+    return {
+      ...article,
+      words: words.map((w: any) => ({ word: w.word, phonetic: w.phonetic }))
+    };
+  } catch (error) {
+    console.error('获取最新文章失败:', error);
+    return null;
+  }
+}
+
 // 获取用户的文章列表
 export async function getUserArticles(userId: string, limit = 50, offset = 0) {
   try {

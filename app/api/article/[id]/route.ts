@@ -9,15 +9,17 @@ export async function GET(
   try {
     const session = await auth();
     
-    if (!session || !session.user || !session.user.id) {
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json(
         { error: '未授权访问' },
         { status: 401 }
       );
     }
     
-    const userId = session.user.id;
-    const articleId = params.id;
+    const userId = session.user.email;
+    // 在Next.js 15中，需要await params
+    const resolvedParams = await params;
+    const articleId = resolvedParams.id;
     
     const article = await getArticleById(articleId, userId);
     
