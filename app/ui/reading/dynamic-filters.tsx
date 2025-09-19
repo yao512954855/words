@@ -71,7 +71,7 @@ export default function DynamicReadingFilters() {
 
     try {
       // 从API获取实际存在的单元
-      const response = await fetch(`/api/reading-available-units?version=${version}&grade=${grade}&theclass=${theclass}`);
+      const response = await fetch(`/api/available-units?version=${version}&grade=${grade}&theclass=${theclass}`);
       if (response.ok) {
         const data = await response.json();
         // 确保 units 是数组

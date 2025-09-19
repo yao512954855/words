@@ -14,7 +14,32 @@ export async function GET(request: Request) {
   const limit = searchParams.get('limit') || '10';
 
   try {
-    // 构建查询条件
+    // 检查是否是请求可用单元列表
+    const isUnitListRequest = version && version !== 'all' && 
+                             grade && grade !== 'all' && 
+                             theclass && theclass !== 'all' && 
+                             !theunit && !ok;
+
+    if (isUnitListRequest) {
+      // 对于joinin四年级上，返回所有可能的单元（1-7）
+      if (version === 'joinin' && grade === '4' && theclass === '1') {
+        return NextResponse.json(['1', '2', '3', '4', '5', '6', '7']);
+      }
+      
+      // 对于其他组合，查询数据库中实际存在的单元
+      const query = `
+        SELECT DISTINCT theunit FROM customers
+        WHERE version = $1 AND grade = $2 AND theclass = $3
+        ORDER BY theunit
+      `;
+      
+      const units = await sql.unsafe(query, [version, grade, theclass]);
+      const unitValues = units.map((row: any) => row.theunit).filter(Boolean);
+      
+      return NextResponse.json(unitValues);
+    }
+    
+    // 正常的单词查询
     let conditions = [];
     let params = [];
     

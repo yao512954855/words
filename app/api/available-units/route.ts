@@ -10,12 +10,13 @@ export async function GET(request: Request) {
   const grade = searchParams.get('grade');
   const theclass = searchParams.get('theclass');
 
-  if (!version || !grade || !theclass) {
-    return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
-  }
-
   try {
-    // 从customers表中查询指定教材、年级、学期下存在的单元
+    // 如果任何一个条件是"全部"，则返回空数组
+    if (!version || version === 'all' || !grade || grade === 'all' || !theclass || theclass === 'all') {
+      return NextResponse.json([]);
+    }
+
+    // 查询数据库中实际存在的单元
     const result = await sql`
       SELECT DISTINCT theunit
       FROM customers
@@ -24,13 +25,12 @@ export async function GET(request: Request) {
       AND theclass = ${theclass}
       ORDER BY theunit
     `;
-
-    // 提取单元值
-    const units = result.map(row => row.theunit);
+    
+    const units = result.map(row => row.theunit).filter(Boolean);
     
     return NextResponse.json(units);
   } catch (error) {
-    console.error('获取可用单元失败:', error);
-    return NextResponse.json({ error: '获取可用单元失败' }, { status: 500 });
+    console.error('Database Error:', error);
+    return NextResponse.json({ error: 'Failed to fetch available units.' }, { status: 500 });
   }
 }

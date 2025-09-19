@@ -6,6 +6,7 @@ import DynamicReadingFilters from '@/app/ui/reading/dynamic-filters';
 import FilteredWordsList from '@/app/ui/reading/filtered-words-list';
 import GenerateArticleDialog from '@/app/ui/reading/generate-article-dialog';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { generateArticle } from '@/app/lib/article-generator';
 
 export default function Page() {
@@ -74,9 +75,28 @@ export default function Page() {
   }) => {
     setIsLoading(true);
     try {
-      const result = await generateArticle(options);
+      // 获取当前筛选条件，如果是"全部"则设为undefined
+      const version = searchParams.get('version') === 'all' ? undefined : searchParams.get('version') || undefined;
+      const grade = searchParams.get('grade') === 'all' ? undefined : searchParams.get('grade') || undefined;
+      const theclass = searchParams.get('theclass') === 'all' ? undefined : searchParams.get('theclass') || undefined;
+      const theunit = searchParams.get('theunit') === 'all' ? undefined : searchParams.get('theunit') || undefined;
+      
+      // 添加筛选条件到生成选项
+      const result = await generateArticle({
+        ...options,
+        version,
+        grade,
+        theclass,
+        theunit
+      });
+      
       setArticle(result);
       setIsDialogOpen(false);
+      
+      // 如果成功保存，显示提示
+      if (result.saved) {
+        alert('文章已自动保存到数据库，可在"我的文章"中查看');
+      }
     } catch (error) {
       console.error('生成文章失败:', error);
       alert('生成文章失败，请稍后重试');
@@ -86,9 +106,16 @@ export default function Page() {
   };
   return (
     <main className="flex flex-col items-center p-4 md:p-6">
-      <h1 className="mb-4 text-xl md:text-2xl">阅读练习</h1>
-      
       <div className="w-full max-w-4xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl md:text-2xl font-semibold">阅读练习</h1>
+          <Link 
+            href="/dashboard/reading/my-articles" 
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            我的文章
+          </Link>
+        </div>
         <div className="mb-4">
           <DynamicReadingFilters />
         </div>
