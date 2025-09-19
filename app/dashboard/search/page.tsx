@@ -2,7 +2,7 @@
 
 import { lusitana } from '@/app/ui/fonts';
 import Pagination from '@/app/ui/pagination';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import WordHint from '@/app/ui/search/word-hint';
@@ -20,6 +20,9 @@ export default function SearchPage() {
   const query = searchParams.get('query') || '';
   const currentPage = Number(searchParams.get('page') || 1);
   
+  // 防抖定时器引用
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // 每页显示的数量
   const itemsPerPage = 10;
   
@@ -32,22 +35,35 @@ export default function SearchPage() {
     currentPage * itemsPerPage
   );
 
-  // 记录搜索输入
+  // 记录搜索输入（带防抖功能）
   const recordSearch = async (term: string, isPartial: boolean, resultCount: number) => {
-    try {
-      await fetch('/api/search-record', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          searchTerm: term,
-          isPartial,
-          resultCount,
-        }),
-      });
-    } catch (error) {
-      console.error('Error recording search:', error);
+    // 清除之前的定时器
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // 只有当搜索词长度>=3时才记录
+    if (term.length >= 2) {
+      // 设置新的定时器，延迟500毫秒执行（减少延迟时间提高响应速度）
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          console.log('防抖后执行搜索记录:', term);
+          await fetch('/api/search-record', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              searchTerm: term,
+              isPartial,
+              resultCount,
+            }),
+          });
+          console.log('搜索记录已保存:', term);
+        } catch (error) {
+          console.error('Error recording search:', error);
+        }
+      }, 1000); // 减少到500ms的防抖延迟，提高响应速度
     }
   };
 
@@ -58,6 +74,8 @@ export default function SearchPage() {
     
     if (term) {
       params.set('query', term);
+      // 用户输入搜索，使用防抖记录
+      recordSearch(term, false, customers.length);
     } else {
       params.delete('query');
     }
@@ -88,8 +106,9 @@ export default function SearchPage() {
         console.log('搜索结果:', data); // 调试用，查看返回的数据结构
         setCustomers(data);
         
-        // 记录搜索输入，包括部分输入的情况
-        recordSearch(query, query.length < 3, data.length);
+        // 记录搜索结果 - 这里不需要单独调用recordSearch
+        // 因为handleSearch已经在输入变化时调用了recordSearch
+        // 防止重复调用导致防抖失效
       } catch (error) {
         console.error('Error fetching search results:', error);
       } finally {

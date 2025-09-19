@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     
     // 记录获取到的userId
     console.log('Using userId:', userId);
-    // 解构请求数据并提供默认值
+    // 获取请求数据
     const requestData = await request.json();
     const searchTerm = requestData.searchTerm || '';
     const isPartial = requestData.isPartial || false;
@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
 
     // 记录搜索输入到数据库
     await sql`
-      INSERT INTO search_records (user_id, search_term, is_partial, result_count)
-      VALUES (${userId}, ${searchTerm}, ${isPartialValue}, ${resultCountValue})
+      INSERT INTO search_records (user_id, search_term, is_partial, result_count,created_at)
+      VALUES (${userId}, ${searchTerm}, ${isPartialValue}, ${resultCountValue},NOW())
     `;
 
     return NextResponse.json({ success: true });
